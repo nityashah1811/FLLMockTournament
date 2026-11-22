@@ -2,8 +2,8 @@
   "title": "FLL Mock Tournament",
   "subtitle": "Robot Game & Innovation Project",
   "announcement": "",
-  "currentMatch": "",
-  "updatedAt": "2026-11-22T07:52:27.874Z",
+  "currentMatch": "m1",
+  "updatedAt": "2026-11-22T08:07:49.284Z",
   "teams": [
     {
       "id": "t1",
@@ -81,7 +81,8 @@
       },
       "t2": {
         "team": "t10",
-        "score": null
+        "score": 150,
+        "detail": null
       }
     },
     {

@@ -147,13 +147,16 @@
       <div class="card stack" style="margin-top:16px">
         <h2>Connect to GitHub (one time)</h2>
         <p>To save changes, this page needs a private “key” (a GitHub access token). It's stored only in this browser. Anyone without it can look at this page but can't change anything.</p>
+        <h3 style="margin:4px 0 0">Easiest way</h3>
         <ol class="steps">
-          <li>Open <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">github.com/settings/personal-access-tokens/new</a> (sign in as <b>${esc(CFG.owner)}</b>).</li>
-          <li>Token name: <code>FLL admin</code>. Expiration: pick a date after your tournament.</li>
-          <li>Repository access → <b>Only select repositories</b> → choose <b>${esc(CFG.repo)}</b>.</li>
-          <li>Permissions → <b>Repository permissions</b> → <b>Contents</b> → <b>Read and write</b>.</li>
-          <li>Click <b>Generate token</b>, copy it, and paste it below.</li>
+          <li>Open <a href="https://github.com/settings/tokens/new?scopes=public_repo&description=FLL%20admin" target="_blank" rel="noopener"><b>this link</b></a> and sign in as <b>${esc(CFG.owner)}</b>.</li>
+          <li>The <b>public_repo</b> box is already ticked. Set <b>Expiration</b> to a date after your tournament.</li>
+          <li>Scroll to the bottom and click <b>Generate token</b>.</li>
+          <li>Copy the token (starts with <code>ghp_</code>) and paste it below.</li>
         </ol>
+        <details class="small muted"><summary>Prefer a fine-grained token?</summary>
+          <p>Open <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">the fine-grained token page</a>. Under <b>Repository access</b> choose <b>Only select repositories</b> and pick <b>${esc(CFG.repo)}</b> (the default “Public repositories” is read-only and will not work). Under <b>Permissions → Repository permissions</b> set <b>Contents</b> to <b>Read and write</b>.</p>
+        </details>
         ${err ? `<div class="notice error">${esc(err)}</div>` : ""}
         <label class="field"><span>Access token</span><input type="password" id="token" placeholder="github_pat_…" autocomplete="off" autocapitalize="off"></label>
         <button class="btn" id="connect">Connect</button>

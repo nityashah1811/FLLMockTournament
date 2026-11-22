@@ -3,7 +3,7 @@
   "subtitle": "Robot Game & Innovation Project",
   "announcement": "",
   "currentMatch": "m1",
-  "updatedAt": "2026-11-22T06:30:41.345Z",
+  "updatedAt": "2026-11-22T06:31:25.818Z",
   "teams": [
     {
       "id": "t1",
@@ -59,7 +59,7 @@
   "matches": [
     {
       "id": "m1",
-      "time": "13:20",
+      "time": "13:02",
       "t1": {
         "team": "t3",
         "score": 15

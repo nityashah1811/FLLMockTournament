@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#14213d">
+  <title>FLL Mock Tournament</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap">
+      <span class="badge">Live</span>
+      <h1 id="title">FLL Mock Tournament</h1>
+      <p class="sub" id="subtitle"></p>
+      <p class="updated" id="updated">Loading…</p>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <div id="banner"></div>
+
+    <nav class="tabs" role="tablist" aria-label="Sections">
+      <button class="tab" role="tab" data-tab="schedule"><span class="ico">📅</span> Schedule</button>
+      <button class="tab" role="tab" data-tab="leaderboard"><span class="ico">🏆</span> Leaderboard</button>
+      <button class="tab" role="tab" data-tab="innovation"><span class="ico">💡</span> Innovation</button>
+    </nav>
+
+    <div class="picker">
+      <label for="team-pick">Team:</label>
+      <select id="team-pick" aria-label="Choose your team"></select>
+    </div>
+    <div id="myteam" style="margin-top:12px"></div>
+
+    <section id="view" aria-live="polite"></section>
+  </main>
+
+  <footer class="site-footer">
+    <div>👀 <span class="counter" id="views">–</span> views · <span class="counter" id="visitors">–</span> visitors</div>
+    <div style="margin-top:6px">This page refreshes by itself. <a href="admin/">Organizer login</a></div>
+  </footer>
+
+  <script src="config.js"></script>
+  <script src="js/common.js"></script>
+  <script src="js/viewer.js"></script>
+</body>
+</html>

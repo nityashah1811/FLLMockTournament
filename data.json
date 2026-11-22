@@ -2,8 +2,8 @@
   "title": "FLL Mock Tournament",
   "subtitle": "Robot Game & Innovation Project",
   "announcement": "",
-  "currentMatch": "m1",
-  "updatedAt": "2026-11-22T08:07:49.284Z",
+  "currentMatch": "",
+  "updatedAt": "2026-11-22T08:22:58.252Z",
   "teams": [
     {
       "id": "t1",
@@ -62,27 +62,15 @@
       "time": "13:10",
       "t1": {
         "team": "t7",
-        "score": 90,
-        "detail": {
-          "season": "bioglow",
-          "sheet": {
-            "inspect": true,
-            "tokens": 6,
-            "v": {
-              "m01.a": true
-            }
-          },
-          "computed": 90,
-          "manual": false,
-          "manualScore": null,
-          "note": ""
-        },
-        "scoredAt": "2026-11-22T07:52:27.873Z"
+        "score": null,
+        "detail": null,
+        "scoredAt": null
       },
       "t2": {
         "team": "t10",
-        "score": 150,
-        "detail": null
+        "score": null,
+        "detail": null,
+        "scoredAt": null
       }
     },
     {
@@ -90,11 +78,15 @@
       "time": "13:20",
       "t1": {
         "team": "t1",
-        "score": null
+        "score": null,
+        "detail": null,
+        "scoredAt": null
       },
       "t2": {
         "team": "t9",
-        "score": null
+        "score": null,
+        "detail": null,
+        "scoredAt": null
       }
     },
     {
@@ -102,11 +94,15 @@
       "time": "13:30",
       "t1": {
         "team": "t4",
-        "score": null
+        "score": null,
+        "detail": null,
+        "scoredAt": null
       },
       "t2": {
         "team": "t3",
-        "score": null
+        "score": null,
+        "detail": null,
+        "scoredAt": null
       }
     },
     {
@@ -114,11 +110,15 @@
       "time": "13:40",
       "t1": {
         "team": "t2",
-        "score": null
+        "score": null,
+        "detail": null,
+        "scoredAt": null
       },
       "t2": {
         "team": "t8",
-        "score": null
+        "score": null,
+        "detail": null,
+        "scoredAt": null
       }
     },
     {
@@ -126,11 +126,15 @@
       "time": "13:50",
       "t1": {
         "team": "t7",
-        "score": null
+        "score": null,
+        "detail": null,
+        "scoredAt": null
       },
       "t2": {
         "team": "t5",
-        "score": null
+        "score": null,
+        "detail": null,
+        "scoredAt": null
       }
     },
     {
@@ -138,11 +142,15 @@
       "time": "14:00",
       "t1": {
         "team": "t8",
-        "score": null
+        "score": null,
+        "detail": null,
+        "scoredAt": null
       },
       "t2": {
         "team": "t6",
-        "score": null
+        "score": null,
+        "detail": null,
+        "scoredAt": null
       }
     },
     {
@@ -150,11 +158,15 @@
       "time": "14:10",
       "t1": {
         "team": "t2",
-        "score": null
+        "score": null,
+        "detail": null,
+        "scoredAt": null
       },
       "t2": {
         "team": "t9",
-        "score": null
+        "score": null,
+        "detail": null,
+        "scoredAt": null
       }
     },
     {
@@ -162,11 +174,15 @@
       "time": "14:20",
       "t1": {
         "team": "t6",
-        "score": null
+        "score": null,
+        "detail": null,
+        "scoredAt": null
       },
       "t2": {
         "team": "t10",
-        "score": null
+        "score": null,
+        "detail": null,
+        "scoredAt": null
       }
     },
     {
@@ -174,11 +190,15 @@
       "time": "14:30",
       "t1": {
         "team": "t5",
-        "score": null
+        "score": null,
+        "detail": null,
+        "scoredAt": null
       },
       "t2": {
         "team": "t1",
-        "score": null
+        "score": null,
+        "detail": null,
+        "scoredAt": null
       }
     },
     {
@@ -186,11 +206,15 @@
       "time": "14:40",
       "t1": {
         "team": "t10",
-        "score": null
+        "score": null,
+        "detail": null,
+        "scoredAt": null
       },
       "t2": {
         "team": "t3",
-        "score": null
+        "score": null,
+        "detail": null,
+        "scoredAt": null
       }
     },
     {
@@ -198,11 +222,15 @@
       "time": "14:50",
       "t1": {
         "team": "t4",
-        "score": null
+        "score": null,
+        "detail": null,
+        "scoredAt": null
       },
       "t2": {
         "team": "t2",
-        "score": null
+        "score": null,
+        "detail": null,
+        "scoredAt": null
       }
     },
     {
@@ -210,11 +238,15 @@
       "time": "15:00",
       "t1": {
         "team": "t3",
-        "score": null
+        "score": null,
+        "detail": null,
+        "scoredAt": null
       },
       "t2": {
         "team": "t6",
-        "score": null
+        "score": null,
+        "detail": null,
+        "scoredAt": null
       }
     },
     {
@@ -222,11 +254,15 @@
       "time": "15:10",
       "t1": {
         "team": "t8",
-        "score": null
+        "score": null,
+        "detail": null,
+        "scoredAt": null
       },
       "t2": {
         "team": "t5",
-        "score": null
+        "score": null,
+        "detail": null,
+        "scoredAt": null
       }
     },
     {
@@ -234,11 +270,15 @@
       "time": "15:20",
       "t1": {
         "team": "t9",
-        "score": null
+        "score": null,
+        "detail": null,
+        "scoredAt": null
       },
       "t2": {
         "team": "t7",
-        "score": null
+        "score": null,
+        "detail": null,
+        "scoredAt": null
       }
     },
     {
@@ -246,11 +286,15 @@
       "time": "15:30",
       "t1": {
         "team": "t1",
-        "score": null
+        "score": null,
+        "detail": null,
+        "scoredAt": null
       },
       "t2": {
         "team": "t4",
-        "score": null
+        "score": null,
+        "detail": null,
+        "scoredAt": null
       }
     }
   ],

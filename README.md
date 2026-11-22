@@ -7,6 +7,10 @@ Two pages, one GitHub Pages site:
 | **Viewer** – schedule, live scores, leaderboard, Innovation Project times, view counter | `https://nityashah1811.github.io/FLLMockTournament/` | Teams, parents, everyone |
 | **Admin** – enter scores, edit schedule/teams, announcements, see view stats | `https://nityashah1811.github.io/FLLMockTournament/admin/` | Organizers only (needs a token to save) |
 
+## Logo
+
+Put the Mechanical Mages logo at `img/logo.png` (a square or wide PNG, about 300 px tall is plenty). It appears in the header of both pages automatically; until the file exists the header is text only.
+
 ## One-time setup (≈5 minutes)
 
 1. **Turn on GitHub Pages**: repo → *Settings → Pages → Build and deployment → Source: **GitHub Actions***.

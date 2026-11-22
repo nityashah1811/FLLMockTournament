@@ -140,6 +140,7 @@
       if (row.best === null) row.rank = null;
       else row.rank = i > 0 && rows[i - 1].best !== null && cmp(rows[i - 1], row) === 0 ? rows[i - 1].rank : i + 1;
     });
+    rows.forEach((row) => { row.tied = row.rank !== null && rows.filter((r) => r.rank === row.rank).length > 1; });
     const rounds = Math.max(3, ...rows.map((r) => r.scores.length));
     return { rows, rounds };
   }

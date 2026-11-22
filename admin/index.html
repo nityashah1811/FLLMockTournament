@@ -6,14 +6,20 @@
   <meta name="robots" content="noindex">
   <meta name="theme-color" content="#14213d">
   <title>FLL Organizer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
   <link rel="stylesheet" href="../css/style.css">
 </head>
 <body>
   <header class="site-header">
-    <div class="wrap">
-      <span class="badge">Organizer</span>
-      <h1>Tournament Admin</h1>
-      <p class="sub"><a href="../" style="color:#fff">← See the public page</a></p>
+    <div class="wrap brand">
+      <img id="logo" src="../img/logo.png" alt="Mechanical Mages logo" hidden onload="this.hidden=false" onerror="this.remove()">
+      <div>
+        <p class="eyebrow"><span>Organizer &middot; Mechanical Mages</span><span class="dot"> &middot; </span><span>FTC Team 20288</span></p>
+        <h1>Tournament Admin</h1>
+        <p class="sub"><a href="../" style="color:#c3d0ec">View the public page</a></p>
+      </div>
     </div>
   </header>
 
@@ -22,7 +28,7 @@
   <div id="bar" class="publish-bar" hidden>
     <div class="wrap">
       <div class="msg" id="bar-msg"></div>
-      <button class="btn orange" id="publish">Publish</button>
+      <button class="btn orange" id="publish">Publish changes</button>
     </div>
   </div>
 

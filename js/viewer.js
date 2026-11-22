@@ -10,77 +10,74 @@
   let tab = TABS.includes(location.hash.slice(1)) ? location.hash.slice(1) : "schedule";
   let myTeam = store.get("fll_myteam") || "";
 
-  // ---------- rendering ----------
-  function slotHtml(label, slot, mine) {
-    if (!slot.team) {
-      return `<div class="slot empty-slot"><span class="table-tag">${label}</span><span class="team">— no team —</span></div>`;
-    }
-    const score = slot.score === null ? `<span class="score none">–</span>` : `<span class="score">${slot.score}</span>`;
-    return `<div class="slot${mine ? " mine" : ""}"><span class="table-tag">${label}</span><span class="team">${teamHtml(data, slot.team)}</span>${score}</div>`;
-  }
+  // ---------- Robot Game schedule ----------
+  const TAG = { done: "Final", now: "Now playing", next: "Up next" };
 
-  const PILL = { done: ["done", "Finished"], now: ["now", "Now playing"], next: ["next", "Up next"] };
+  function cell(slot) {
+    if (!slot.team) return `<td><div class="cell none"><span class="nm">&mdash;</span></div></td>`;
+    const score = slot.score === null ? "" : `<span class="sc">${slot.score}</span>`;
+    return `<td class="${myTeam === slot.team ? "mine" : ""}"><div class="cell"><span class="nm">${teamHtml(data, slot.team)}</span>${score}</div></td>`;
+  }
 
   function renderSchedule() {
     const status = matchStatuses(data);
     let list = sortedMatches(data);
     if (myTeam) list = list.filter((m) => m.t1.team === myTeam || m.t2.team === myTeam);
     if (!list.length) return `<div class="empty">No matches scheduled yet.</div>`;
-    return list
+    const rows = list
       .map((m) => {
         const st = status[m.id];
-        const pill = PILL[st] ? `<span class="pill ${PILL[st][0]}">${PILL[st][1]}</span>` : "";
-        return `<div class="card match status-${st}">
-          <div class="match-head"><span class="match-time">${fmtTime(m.time)}</span>${pill}</div>
-          ${slotHtml("Table 1", m.t1, myTeam && m.t1.team === myTeam)}
-          ${slotHtml("Table 2", m.t2, myTeam && m.t2.team === myTeam)}
-        </div>`;
+        const tag = TAG[st] ? `<span class="tag ${st}">${TAG[st]}</span>` : "";
+        return `<tr class="status-${st}"><td class="c-time"><span class="time">${fmtTime(m.time)}</span>${tag}</td>${cell(m.t1)}${cell(m.t2)}</tr>`;
       })
       .join("");
+    return `<div class="panel"><table class="sched"><thead><tr><th>Start</th><th>Table 1</th><th>Table 2</th></tr></thead><tbody>${rows}</tbody></table></div>`;
   }
 
-  const MEDAL = { 1: "🥇", 2: "🥈", 3: "🥉" };
-
+  // ---------- Leaderboard (FLL Challenge ranking) ----------
+  // Rank = highest score of the team's 3 matches. Ties: compare 2nd-highest, then 3rd-highest.
   function renderLeaderboard() {
     const { rows, rounds } = leaderboard(data);
     if (!rows.length) return `<div class="empty">No teams yet.</div>`;
     const anyScore = rows.some((r) => r.best !== null);
-    let head = `<tr><th>#</th><th class="team">Team</th>`;
-    for (let i = 1; i <= rounds; i++) head += `<th>R${i}</th>`;
+    let head = `<tr><th>Rank</th><th class="team">Team</th>`;
+    for (let i = 1; i <= rounds; i++) head += `<th><span class="long">Match ${i}</span><span class="short">M${i}</span></th>`;
     head += `<th>Best</th></tr>`;
     const body = rows
       .map((r) => {
+        const bestIdx = r.best === null ? -1 : r.scores.indexOf(r.best);
         const cells = [];
         for (let i = 0; i < rounds; i++) {
           const s = r.scores[i];
-          cells.push(`<td>${s === undefined || s === null ? '<span class="dash">–</span>' : s}</td>`);
+          cells.push(`<td class="${i === bestIdx ? "used" : "dropped"}">${s === undefined || s === null ? '<span class="dash">&ndash;</span>' : s}</td>`);
         }
-        const rank = r.rank === null ? '<span class="dash">–</span>' : MEDAL[r.rank] || r.rank;
-        const num = r.team.number ? `<small>#${esc(r.team.number)}</small>` : "";
-        return `<tr class="${myTeam === r.team.id ? "mine" : ""}"><td class="rank">${rank}</td>
-          <td class="team">${esc(r.team.name)}${num}</td>${cells.join("")}
-          <td class="best${r.rank && r.rank <= 3 ? " top" : ""}">${r.best === null ? '<span class="dash">–</span>' : r.best}</td></tr>`;
+        const rank = r.rank === null ? '<span class="dash">&ndash;</span>' : (r.tied ? "<span>T</span>" : "") + r.rank;
+        const num = r.team.number ? `<small>Team #${esc(r.team.number)}</small>` : "";
+        const cls = [myTeam === r.team.id ? "mine" : "", r.rank && r.rank <= 3 ? "r" + r.rank : ""].join(" ");
+        return `<tr class="${cls}"><td class="rank">${rank}</td><td class="team">${esc(r.team.name)}${num}</td>${cells.join("")}
+          <td class="best">${r.best === null ? '<span class="dash">&ndash;</span>' : r.best}</td></tr>`;
       })
       .join("");
-    return `${anyScore ? "" : '<div class="notice">No scores yet — check back once the first matches are finished!</div>'}
-      <div class="card board-wrap"><table class="board"><thead>${head}</thead><tbody>${body}</tbody></table></div>
-      <p class="muted small">Teams are ranked by their <b>best</b> Robot Game score. Ties are broken by the next-best score.</p>`;
+    return `${anyScore ? "" : '<div class="notice">No scores yet. Rankings will appear as matches finish.</div>'}
+      <div class="panel"><table class="board"><thead>${head}</thead><tbody>${body}</tbody></table></div>
+      <p class="rules"><b>How teams are ranked:</b> by each team's <b>highest</b> Robot Game score from its ${rounds} matches. If teams tie, the <b>second-highest</b> score decides, then the <b>third-highest</b>. Teams still tied share a rank (T).</p>`;
   }
 
+  // ---------- Innovation Project ----------
   function renderInnovation() {
     let list = sortedInnovation(data);
     if (myTeam) list = list.filter((s) => s.team === myTeam);
-    if (!list.length) return `<div class="empty">${myTeam ? "This team has no Innovation Project slot listed." : "No Innovation Project sessions scheduled yet."}</div>`;
-    return list
+    if (!list.length) return `<div class="empty">${myTeam ? "This team has no Innovation Project judging slot." : "No Innovation Project judging scheduled yet."}</div>`;
+    const rows = list
       .map(
-        (s) => `<div class="card match status-${s.done ? "done" : "later"}">
-          <div class="match-head"><span class="match-time">${fmtTime(s.time)}</span>${s.done ? '<span class="pill done">Finished</span>' : ""}</div>
-          <div class="slot${myTeam && s.team === myTeam ? " mine" : ""}"><span class="table-tag">Judging</span><span class="team">${teamHtml(data, s.team)}</span></div>
-        </div>`
+        (s) => `<tr class="${myTeam && s.team === myTeam ? "mine" : ""}"><td class="t">${fmtTime(s.time)}</td><td><b>${teamHtml(data, s.team)}</b></td>
+          <td style="text-align:right">${s.done ? '<span class="tag done">Complete</span>' : ""}</td></tr>`
       )
       .join("");
+    return `<div class="panel"><table class="simple"><thead><tr><th>Start</th><th>Team</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>`;
   }
 
+  // ---------- Team summary ----------
   function renderMyTeam() {
     const el = $("myteam");
     const t = teamById(data, myTeam);
@@ -92,12 +89,12 @@
     const { rows } = leaderboard(data);
     const row = rows.find((r) => r.team.id === t.id);
     const items = [];
-    items.push(nextRun
-      ? `<li>Next Robot Game run: <b>${fmtTime(nextRun.time)}</b> at <b>${nextRun.table}</b>${status[nextRun.matchId] === "now" ? " (happening now!)" : ""}</li>`
-      : runs.length ? `<li>All Robot Game runs finished 🎉</li>` : `<li>No Robot Game runs scheduled yet.</li>`);
-    if (ip) items.push(`<li>Innovation Project judging: <b>${fmtTime(ip.time)}</b>${ip.done ? " (done)" : ""}</li>`);
-    if (row && row.best !== null) items.push(`<li>Best score: <b>${row.best}</b> · Rank: <b>#${row.rank}</b></li>`);
-    el.innerHTML = `<div class="card myteam-card"><h3>${esc(t.name)}</h3><ul>${items.join("")}</ul></div>`;
+    items.push(["Next Robot Game match", nextRun
+      ? `${fmtTime(nextRun.time)} &middot; ${nextRun.table}${status[nextRun.matchId] === "now" ? " (now playing)" : ""}`
+      : runs.length ? "All matches complete" : "Not scheduled"]);
+    if (ip) items.push(["Innovation Project", fmtTime(ip.time) + (ip.done ? " (complete)" : "")]);
+    if (row && row.best !== null) items.push(["Best score", `${row.best} &middot; Rank ${row.tied ? "T" : ""}${row.rank}`]);
+    el.innerHTML = `<div class="card summary"><h3>${esc(t.name)}</h3><dl>${items.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join("")}</dl></div>`;
   }
 
   function renderPicker() {
@@ -114,11 +111,11 @@
 
   function render() {
     if (!data) return;
-    document.title = data.title;
+    document.title = data.title + " | Mechanical Mages";
     $("title").textContent = data.title;
     $("subtitle").textContent = data.subtitle;
-    $("updated").textContent = data.updatedAt ? "Last updated " + fmtStamp(data.updatedAt) + " · refreshes automatically" : "";
-    $("banner").innerHTML = data.announcement ? `<div class="banner">📣 ${esc(data.announcement)}</div>` : "";
+    $("updated").textContent = data.updatedAt ? "Last updated " + fmtStamp(data.updatedAt) : "";
+    $("banner").innerHTML = data.announcement ? `<div class="banner"><b>Announcement</b><span>${esc(data.announcement)}</span></div>` : "";
     document.querySelectorAll(".tab").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.tab === tab)));
     renderPicker();
     renderMyTeam();
@@ -133,7 +130,7 @@
       if (j !== lastJson) { lastJson = j; data = d; render(); }
     } catch (e) {
       if (!data) $("view").innerHTML = `<div class="notice error">Couldn't load the schedule. Check your internet connection and refresh the page.</div>`;
-      $("updated").textContent = data ? $("updated").textContent : "Offline";
+      if (!data) $("updated").textContent = "Offline";
     }
   }
 

@@ -112,12 +112,12 @@
       clearDraft();
       updateBar();
       watchLive(stamp);
-      toast("✅ Saved to GitHub! The public page updates in about a minute.", "ok");
+      toast("Saved. The public page updates in about a minute.", "ok");
     } catch (e) {
-      toast("⚠️ " + esc(e.message), "error");
+      toast("Could not save: " + esc(e.message), "error");
     } finally {
       btn.disabled = false;
-      btn.textContent = "Publish";
+      btn.textContent = "Publish changes";
     }
   }
 
@@ -132,7 +132,7 @@
         const d = await res.json();
         if (d.updatedAt === stamp) {
           clearInterval(S.liveTimer);
-          toast("✅ Live! Everyone can see the latest version now.", "ok");
+          toast("Live. Everyone can see the latest version now.", "ok");
           return;
         }
       } catch (e) { /* keep trying */ }
@@ -172,7 +172,7 @@
   }
 
   // ---------- main UI ----------
-  const TABS = [["scores", "🏁 Scores"], ["schedule", "📅 Schedule"], ["teams", "👥 Teams"], ["settings", "⚙️ Settings"]];
+  const TABS = [["scores", "Scores"], ["schedule", "Schedule"], ["teams", "Teams"], ["settings", "Settings"]];
 
   function renderApp() {
     app.innerHTML = `
@@ -214,7 +214,7 @@
       return `<div class="card match status-${st}" data-card="${m.id}">
         <div class="match-head"><span class="match-time">${fmtTime(m.time)}</span>
           <span class="row fixed" style="gap:8px"><span class="pill ${st}" data-pill>${{ done: "Finished", now: "Now playing", next: "Up next", later: "" }[st]}</span>
-          ${isNow ? `<button class="btn secondary small" data-act="clearnow">Clear</button>` : `<button class="btn secondary small" data-act="now" data-id="${m.id}">▶ Mark live</button>`}</span></div>
+          ${isNow ? `<button class="btn secondary small" data-act="clearnow">Clear</button>` : `<button class="btn secondary small" data-act="now" data-id="${m.id}">Mark live</button>`}</span></div>
         ${slot("t1", "Table 1")}${slot("t2", "Table 2")}</div>`;
     });
     return `
@@ -248,14 +248,14 @@
     const matchRows = sortedMatches(d).map((m) => `
       <div class="card stack" data-row="${m.id}">
         <div class="row"><input type="time" value="${esc(m.time)}" data-f="match-time:${m.id}" aria-label="Start time">
-          <button class="btn icon fixed" data-act="delmatch" data-id="${m.id}" aria-label="Delete match">🗑</button></div>
+          <button class="btn danger small fixed" data-act="delmatch" data-id="${m.id}" aria-label="Delete match">Delete</button></div>
         <div class="row"><span class="table-tag fixed">Table 1</span><select data-f="match-team:${m.id}:t1">${teamOptions(m.t1.team)}</select></div>
         <div class="row"><span class="table-tag fixed">Table 2</span><select data-f="match-team:${m.id}:t2">${teamOptions(m.t2.team)}</select></div>
       </div>`).join("");
     const ipRows = sortedInnovation(d).map((s) => `
       <div class="card stack" data-row="${s.id}">
         <div class="row"><input type="time" value="${esc(s.time)}" data-f="ip-time:${s.id}" aria-label="Start time">
-          <button class="btn icon fixed" data-act="delip" data-id="${s.id}" aria-label="Delete slot">🗑</button></div>
+          <button class="btn danger small fixed" data-act="delip" data-id="${s.id}" aria-label="Delete slot">Delete</button></div>
         <select data-f="ip-team:${s.id}">${teamOptions(s.team)}</select>
         <label class="check"><input type="checkbox" data-f="ip-done:${s.id}" ${s.done ? "checked" : ""}> Judging finished</label>
       </div>`).join("");
@@ -263,10 +263,10 @@
       ${w.length ? `<div class="notice warn"><b>Heads up</b><ul>${w.map((x) => `<li>${esc(x)}</li>`).join("")}</ul></div>` : ""}
       <h2 class="section-title">Robot Game matches</h2>
       ${matchRows || '<div class="empty">No matches yet.</div>'}
-      <button class="btn secondary" data-act="addmatch">+ Add match</button>
+      <button class="btn secondary" data-act="addmatch">Add match</button>
       <h2 class="section-title">Innovation Project judging</h2>
       ${ipRows || '<div class="empty">No sessions yet.</div>'}
-      <button class="btn secondary" data-act="addip">+ Add judging slot</button>`;
+      <button class="btn secondary" data-act="addip">Add judging slot</button>`;
   }
 
   // ----- Teams tab -----
@@ -275,16 +275,16 @@
       <div class="card stack" data-row="${t.id}">
         <input type="text" value="${esc(t.name)}" placeholder="Team name" data-f="team-name:${t.id}" aria-label="Team name">
         <div class="row"><input type="text" inputmode="numeric" value="${esc(t.number)}" placeholder="Team number (optional)" data-f="team-number:${t.id}" aria-label="Team number">
-          <button class="btn icon fixed" data-act="delteam" data-id="${t.id}" aria-label="Delete team">🗑</button></div>
+          <button class="btn danger small fixed" data-act="delteam" data-id="${t.id}" aria-label="Delete team">Delete</button></div>
       </div>`).join("");
-    return `${rows || '<div class="empty">No teams yet.</div>'}<button class="btn secondary" data-act="addteam">+ Add team</button>`;
+    return `${rows || '<div class="empty">No teams yet.</div>'}<button class="btn secondary" data-act="addteam">Add team</button>`;
   }
 
   // ----- Settings tab -----
   function settingsHtml() {
     const d = S.data;
     return `
-      <div class="card"><h2>📊 Website views</h2>
+      <div class="card"><h2>Website views</h2>
         <div class="stats"><div class="stat"><b id="st-views">…</b>views</div><div class="stat"><b id="st-visitors">…</b>visitors</div></div>
         <p class="muted small" style="margin-bottom:0">A “view” is counted once each time someone opens the public page in a new browser session; a “visitor” is counted once per browser. Opening this admin page doesn't count.</p></div>
 
@@ -295,7 +295,7 @@
       </div>
 
       <div class="card stack"><h2>Tools</h2>
-        <button class="btn secondary" data-act="backup">⬇ Download a backup (JSON)</button>
+        <button class="btn secondary" data-act="backup">Download a backup (JSON)</button>
         <button class="btn danger" data-act="clearscores">Clear all scores</button>
       </div>
 
@@ -430,7 +430,7 @@
       if (fromConnect || !store.get(TOKEN_KEY)) S.token = "";
       else app.innerHTML = "";
       if (!S.token) return renderConnect(e.message);
-      app.innerHTML = `<div class="notice error" style="margin-top:16px">⚠️ ${esc(e.message)}</div><button class="btn" onclick="location.reload()">Try again</button>`;
+      app.innerHTML = `<div class="notice error" style="margin-top:16px">${esc(e.message)}</div><button class="btn" onclick="location.reload()">Try again</button>`;
       return;
     }
     // Restore unpublished work from an earlier visit (e.g. phone died, page reloaded)

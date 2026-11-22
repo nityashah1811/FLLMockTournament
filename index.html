@@ -3,41 +3,49 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#14213d">
+  <meta name="theme-color" content="#0b1730">
+  <meta name="description" content="Live schedule, scores and leaderboard for the FLL Mock Tournament hosted by Mechanical Mages, FTC Team 20288.">
   <title>FLL Mock Tournament</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
   <header class="site-header">
-    <div class="wrap">
-      <span class="badge">Live</span>
-      <h1 id="title">FLL Mock Tournament</h1>
-      <p class="sub" id="subtitle"></p>
-      <p class="updated" id="updated">Loading…</p>
+    <div class="wrap brand">
+      <img id="logo" src="img/logo.png" alt="Mechanical Mages logo" hidden onload="this.hidden=false" onerror="this.remove()">
+      <div>
+        <p class="eyebrow"><span>Hosted by Mechanical Mages</span><span class="dot"> &middot; </span><span>FTC Team 20288</span></p>
+        <h1 id="title">FLL Mock Tournament</h1>
+        <p class="sub" id="subtitle"></p>
+      </div>
     </div>
+    <div class="header-bar"><div class="wrap"><span id="updated">Loading&hellip;</span><span>Updates automatically</span></div></div>
   </header>
 
   <main class="wrap">
     <div id="banner"></div>
 
     <nav class="tabs" role="tablist" aria-label="Sections">
-      <button class="tab" role="tab" data-tab="schedule"><span class="ico">📅</span> Schedule</button>
-      <button class="tab" role="tab" data-tab="leaderboard"><span class="ico">🏆</span> Leaderboard</button>
-      <button class="tab" role="tab" data-tab="innovation"><span class="ico">💡</span> Innovation</button>
+      <button class="tab" role="tab" data-tab="schedule">Robot Game</button>
+      <button class="tab" role="tab" data-tab="leaderboard">Leaderboard</button>
+      <button class="tab" role="tab" data-tab="innovation">Innovation</button>
     </nav>
 
     <div class="picker">
-      <label for="team-pick">Team:</label>
+      <label for="team-pick">Team</label>
       <select id="team-pick" aria-label="Choose your team"></select>
     </div>
-    <div id="myteam" style="margin-top:12px"></div>
+    <div id="myteam"></div>
 
     <section id="view" aria-live="polite"></section>
   </main>
 
   <footer class="site-footer">
-    <div>👀 <span class="counter" id="views">–</span> views · <span class="counter" id="visitors">–</span> visitors</div>
-    <div style="margin-top:6px">This page refreshes by itself. <a href="admin/">Organizer login</a></div>
+    <div class="host">Hosted by Mechanical Mages &middot; FTC Team 20288</div>
+    <div style="margin-top:6px"><span class="counter" id="views">&ndash;</span> views &middot; <span class="counter" id="visitors">&ndash;</span> visitors</div>
+    <div style="margin-top:6px"><a href="admin/">Organizer login</a></div>
   </footer>
 
   <script src="config.js"></script>

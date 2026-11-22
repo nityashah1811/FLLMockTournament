@@ -44,7 +44,7 @@ Scorers use `https://nityashah1811.github.io/FLLMockTournament/score/` on their 
 
 Several scorers can save at the same time; every save re-reads the newest data and only changes that one score. The admin page merges its changes the same way, so it never wipes out scorer entries.
 
-**Mission points** are in `js/missions.js` (Bioglow 2026-27, copied from the unofficial Komurobo scoresheet; they add up to the 530-point maximum). Have your head referee compare them with FIRST's official Robot Game Rulebook, and fix any number in that file.
+**Mission points and descriptions** are in `js/missions.js`, taken from FIRST's official [Bioglow Robot Game Rulebook](https://firstinspires.blob.core.windows.net/fll/challenge/2026-27/fll-challenge-bioglow-rgr.pdf) (530-point maximum). If FIRST issues a Challenge Update, change the numbers or wording in that file. The mission pictures are in `img/missions/` (from the same rulebook).
 
 **Keep the scorer link private.** It contains a GitHub key that can edit this repository. Make the key with a short expiry (e.g. 3 days) and delete it on GitHub after the event.
 

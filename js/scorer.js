@@ -116,31 +116,36 @@
     window.scrollTo(0, 0);
   }
 
-  function rowToggle(k, label, pts, on, enabled) {
-    return `<button class="sc-toggle ${on ? "on" : ""}" data-act="toggle" data-k="${k}" ${enabled ? "" : "disabled"} aria-pressed="${on}">
-      <span class="sc-box">${on ? "✓" : ""}</span><span class="sc-lbl">${esc(label)}</span><span class="sc-pts">+${pts}</span></button>`;
+  const descHtml = (d) => (d ? `<small class="sc-desc">${esc(d)}</small>` : "");
+
+  function rowToggle(k, label, pts, on, enabled, desc, zero) {
+    return `<button class="sc-toggle ${on ? "on" : ""} ${zero ? "zero" : ""}" data-act="toggle" data-k="${k}" ${enabled ? "" : "disabled"} aria-pressed="${on}">
+      <span class="sc-box">${on ? "✓" : ""}</span><span class="sc-lbl">${esc(label)}${descHtml(desc)}</span><span class="sc-pts">${zero ? "= 0" : "+" + pts}</span></button>`;
   }
 
   function missionHtml(m) {
     const sheet = st.sheet, v = sheet.v;
     const items = m.items.map((i) => {
       const k = SC.key(m, i), enabled = SC.available(sheet, m, i);
-      if (i.type === "check") return rowToggle(k, i.label, i.points, !!v[k], enabled);
+      if (i.type === "check") return rowToggle(k, i.label, i.points, !!v[k], enabled, i.desc, i.zeroMission);
       if (i.type === "count") {
         const max = SC.countMax(sheet, m, i), n = Number(v[k] || 0);
-        return `<div class="sc-count ${enabled ? "" : "off"}"><span class="sc-lbl">${esc(i.label)}<small>${i.points} each, up to ${max}</small></span>
+        return `<div class="sc-count ${enabled ? "" : "off"}"><span class="sc-lbl">${esc(i.label)}<small class="sc-each">${i.points} each, up to ${max}</small>${descHtml(i.desc)}</span>
           <span class="sc-step"><button data-act="dec" data-k="${k}" ${enabled && n > 0 ? "" : "disabled"} aria-label="One less">−</button><b>${n}</b>
           <button data-act="inc" data-k="${k}" ${enabled && n < max ? "" : "disabled"} aria-label="One more">+</button></span></div>`;
       }
       const cur = v[k];
-      return `<div class="sc-choice"><span class="sc-lbl">${esc(i.label)}</span><span class="sc-opts">
+      return `<div class="sc-choice"><span class="sc-lbl">${esc(i.label)}${descHtml(i.desc)}</span><span class="sc-opts">
         <button class="${cur === undefined ? "on" : ""}" data-act="choice" data-k="${k}" data-i="">None</button>
-        ${i.options.map((o, idx) => `<button class="${cur === idx ? "on" : ""}" data-act="choice" data-k="${k}" data-i="${idx}">${esc(o.label)} <small>+${o.points}</small></button>`).join("")}</span></div>`;
+        ${i.options.map((o, idx) => `<button class="${cur === idx ? "on" : ""}" data-act="choice" data-k="${k}" data-i="${idx}">${esc(o.label)}${o.points ? ` <small>+${o.points}</small>` : ""}</button>`).join("")}</span></div>`;
     }).join("");
     const pts = SC.missionPoints(sheet, m);
+    const n = m.id.slice(1);
     return `<section class="card sc-mission"><h3><span>${esc(m.name)}</span><em class="${pts ? "has" : ""}">${pts}</em></h3>
-      ${m.noTouch ? '<p class="sc-hint">Scores nothing if it is touching equipment at the end.</p>' : ""}
-      ${m.note ? `<p class="sc-hint">${esc(m.note)}</p>` : ""}${items}</section>`;
+      <div class="sc-body">
+        <button class="sc-pic" data-pic="${m.id}" aria-label="Enlarge the picture of ${esc(m.name)}"><img src="../img/missions/${m.id}.jpg" alt="${esc(m.name)} model" loading="lazy"></button>
+        <div class="sc-items">${m.noTouch ? '<p class="sc-hint">Scores nothing if the model is touching equipment at the end of the match.</p>' : ""}${items}</div>
+      </div></section>`;
   }
 
   function sheetHtml() {
@@ -155,10 +160,10 @@
       ${st.err ? `<div class="notice error">${esc(st.err)}</div>` : ""}
       <div class="sc-note-top">${st.manual ? "<b>Manual override is on.</b> The missions below are ignored." : "Tap everything that was completed. The total updates as you go."}</div>
       <section class="card sc-mission"><h3><span>Equipment inspection</span></h3>
-        ${rowToggle("inspect", SHEET.inspection.label, SHEET.inspection.points, sheet.inspect, true)}</section>
+        ${rowToggle("inspect", "Passed inspection", SHEET.inspection.points, sheet.inspect, true, SHEET.inspection.desc)}</section>
       ${SHEET.missions.map(missionHtml).join("")}
       <section class="card sc-mission"><h3><span>Precision tokens</span><em class="has">${tk.points[sheet.tokens]}</em></h3>
-        <p class="sc-hint">Start with 6. Tap how many are left at the end of the match.</p>
+        <p class="sc-hint">${esc(tk.desc)}</p>
         <div class="sc-tokens">${[6, 5, 4, 3, 2, 1, 0].map((n) => `<button class="${sheet.tokens === n ? "on" : ""}" data-act="tokens" data-n="${n}">${n}<small>+${tk.points[n]}</small></button>`).join("")}</div></section>
       <section class="card sc-manual ${st.manual ? "on" : ""}"><h3><span>Manual score override</span></h3>
         <p class="sc-hint">Use this if the referee decides the score by hand. The number you type replaces the mission total.</p>
@@ -223,10 +228,20 @@
     st.busy = false; render();
   }
 
+  function showPic(id) {
+    const m = SHEET.missions.find((x) => x.id === id); if (!m) return;
+    const box = document.createElement("div");
+    box.className = "sc-lightbox"; box.setAttribute("role", "dialog");
+    box.innerHTML = `<div><img src="../img/missions/${id}.jpg" alt="${esc(m.name)} model"><p>${esc(m.name)} · tap anywhere to close</p></div>`;
+    box.addEventListener("click", () => box.remove());
+    document.body.appendChild(box);
+  }
+
   function setVal(k, fn) { st.sheet.v = st.sheet.v || {}; fn(st.sheet.v); SC.clean(st.sheet); render(); }
 
   app.addEventListener("click", (e) => {
     const t = e.target.closest("button"); if (!t) return;
+    if (t.dataset.pic) { showPic(t.dataset.pic); return; }
     if (t.dataset.open) { const [mid, slot] = t.dataset.open.split(":"); openSheet(mid, slot); return; }
     if (t.dataset.table) { st.table = t.dataset.table; store.set("fll_sc_table", st.table); render(); return; }
     if (t.dataset.filter) { st.filter = t.dataset.filter; store.set("fll_sc_filter", st.filter); render(); return; }

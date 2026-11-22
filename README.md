@@ -7,9 +7,9 @@ Two pages, one GitHub Pages site:
 | **Viewer** – schedule, live scores, leaderboard, Innovation Project times, view counter | `https://nityashah1811.github.io/FLLMockTournament/` | Teams, parents, everyone |
 | **Admin** – enter scores, edit schedule/teams, announcements, see view stats | `https://nityashah1811.github.io/FLLMockTournament/admin/` | Organizers only (needs a token to save) |
 
-## Logo
+## Logo and certificate images
 
-`img/logo.png` is the emblem shown in the site header (transparent background). `img/logo-black.png` is the full logo with the team name on black, used for the certificates.
+`img/logo.png` is the emblem shown in the site header. The other files in `img/` (`logo-transparent.png`, `fll-challenge-reverse.png`, `cert-panel.png`) are the artwork used by the participation certificates in Google Slides.
 
 ## One-time setup (≈5 minutes)
 

@@ -404,3 +404,21 @@ details summary { cursor: pointer; }
 .ai-opp { border-left: 3px solid var(--accent); background: #f8faff; border-radius: 0 var(--radius) var(--radius) 0; padding: 8px 12px; margin: 8px 0; }
 .ai-opp p { margin: 4px 0; }
 .coach-note { background: var(--live-soft); border: 1px solid #f1d9a0; border-radius: var(--radius); padding: 8px 12px; margin-top: 14px; }
+
+/* Public score breakdown */
+.run { margin-bottom: 10px; }
+.run summary { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px; list-style: none; }
+.run summary::-webkit-details-marker { display: none; }
+.run .who { font-weight: 700; overflow-wrap: anywhere; }
+.run .who small { display: block; color: var(--muted); font-weight: 500; font-size: .8rem; }
+.run .tot { font-size: 1.3rem; font-weight: 800; color: var(--accent); flex: 0 0 auto; }
+.run summary::after { content: "\25BE"; color: var(--muted); margin-left: 4px; }
+.run[open] summary::after { content: "\25B4"; }
+.run-body { padding: 4px 14px 14px; border-top: 1px solid var(--line); }
+.bd { width: 100%; border-collapse: collapse; font-size: .92rem; }
+.bd td { padding: 5px 0; }
+.bd td.p { text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; padding-left: 12px; }
+.bd tr.mis td { font-weight: 600; border-top: 1px solid var(--line); }
+.bd tr.sub td { color: var(--ink-2); padding: 1px 0 4px 14px; font-size: .86rem; }
+.bd tr.sub td.p { font-weight: 600; padding-right: 0; }
+.bd tfoot td { border-top: 2px solid var(--ink); font-weight: 800; padding-top: 8px; font-size: 1rem; }

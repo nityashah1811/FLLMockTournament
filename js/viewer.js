@@ -4,7 +4,7 @@
   const { esc, fmtTime, fmtStamp, store, teamHtml, teamById, sortedMatches, sortedInnovation, matchStatuses, runsByTeam, leaderboard } = FLL;
 
   const $ = (id) => document.getElementById(id);
-  const TABS = ["schedule", "leaderboard", "innovation"];
+  const TABS = ["schedule", "leaderboard", "scores", "innovation"];
   let data = null;
   let lastJson = "";
   let tab = TABS.includes(location.hash.slice(1)) ? location.hash.slice(1) : "schedule";
@@ -68,6 +68,67 @@
       <p class="rules"><b>How teams are ranked:</b> by each team's <b>highest</b> Robot Game score from its ${rounds} matches. If teams tie, the <b>second-highest</b> score decides, then the <b>third-highest</b>. Teams still tied share a rank (T).</p>`;
   }
 
+  // ---------- Score details: which missions earned points in each match ----------
+  const SC = window.FLLScore, SHEET = SC.SHEET;
+  const pts = (n) => (n > 0 ? "+" + n : "0");
+
+  // The lines of one scoresheet: [{ label, detail, points }] for everything that earned points.
+  function earnedLines(detail) {
+    const sheet = SC.clean(JSON.parse(JSON.stringify(detail.sheet)));
+    const lines = [];
+    if (sheet.inspect) lines.push({ label: SHEET.inspection.label, points: SHEET.inspection.points });
+    const notScored = [];
+    SHEET.missions.forEach((m) => {
+      const total = SC.missionPoints(sheet, m);
+      const zeroed = m.items.some((i) => i.zeroMission && sheet.v[SC.key(m, i)]);
+      const parts = [];
+      m.items.forEach((i) => {
+        if (i.zeroMission) return;
+        const p = SC.itemPoints(sheet, m, i);
+        if (p <= 0) return;
+        const val = sheet.v[SC.key(m, i)];
+        const note = i.type === "count" ? " &times; " + val : i.type === "choice" ? ": " + esc(i.options[val].label) : "";
+        parts.push({ label: esc(i.label) + note, points: p });
+      });
+      if (zeroed) lines.push({ mission: m.name, parts: [], total: 0, zeroed: true });
+      else if (total > 0) lines.push({ mission: m.name, parts, total });
+      else notScored.push(m.name.split(" ")[0]);
+    });
+    const tp = SHEET.tokens.points[sheet.tokens] || 0;
+    lines.push({ label: "Precision tokens left: " + sheet.tokens, points: tp });
+    return { lines, notScored };
+  }
+
+  function breakdownHtml(slot) {
+    const d = slot.detail;
+    if (!d || !d.sheet || d.manual) return `<p class="muted small" style="margin:0">This score was entered as a total, so there is no mission-by-mission breakdown.</p>`;
+    const { lines, notScored } = earnedLines(d);
+    const rows = lines.map((l) => l.mission
+      ? `<tr class="mis"><td>${esc(l.mission)}${l.zeroed ? ' <span class="muted">(scored 0: a rule cancelled it)</span>' : ""}</td><td class="p">${pts(l.total)}</td></tr>` +
+        l.parts.map((x) => `<tr class="sub"><td>${x.label}</td><td class="p">${pts(x.points)}</td></tr>`).join("")
+      : `<tr class="mis"><td>${esc(l.label)}</td><td class="p">${pts(l.points)}</td></tr>`).join("");
+    return `<table class="bd"><tbody>${rows}</tbody><tfoot><tr><td>Total</td><td class="p">${slot.score}</td></tr></tfoot></table>
+      ${notScored.length ? `<p class="muted small" style="margin:8px 0 0">No points: ${notScored.join(", ")}</p>` : ""}`;
+  }
+
+  function renderScores() {
+    const runs = [];
+    sortedMatches(data).forEach((m) => ["t1", "t2"].forEach((k) => {
+      const s = m[k];
+      if (s.team && s.score !== null && (!myTeam || s.team === myTeam)) runs.push({ m, s, table: k === "t1" ? "Table 1" : "Table 2" });
+    }));
+    const order = {}; data.teams.forEach((t) => (order[t.id] = 0));
+    const matchNo = {};
+    sortedMatches(data).forEach((m) => ["t1", "t2"].forEach((k) => { const t = m[k].team; if (t) { order[t] = (order[t] || 0) + 1; matchNo[m.id + k] = order[t]; } }));
+    if (!runs.length) return `<div class="empty">${myTeam ? "This team has no scored matches yet." : "No scores yet. Each match's mission-by-mission breakdown will appear here once it is scored."}</div>`;
+    runs.reverse();
+    return runs.map(({ m, s, table }) => {
+      const key = m.id + (table === "Table 1" ? "t1" : "t2");
+      return `<details class="run panel"${myTeam ? " open" : ""}><summary><span class="who">${teamHtml(data, s.team)}<small>Match ${matchNo[key]} &middot; ${fmtTime(m.time)} &middot; ${table}</small></span><span class="tot">${s.score}</span></summary>
+        <div class="run-body">${breakdownHtml(s)}</div></details>`;
+    }).join("");
+  }
+
   // ---------- Innovation Project ----------
   function renderInnovation() {
     let list = sortedInnovation(data);
@@ -124,7 +185,7 @@
     document.querySelectorAll(".tab").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.tab === tab)));
     renderPicker();
     renderMyTeam();
-    $("view").innerHTML = tab === "leaderboard" ? renderLeaderboard() : tab === "innovation" ? renderInnovation() : renderSchedule();
+    $("view").innerHTML = tab === "leaderboard" ? renderLeaderboard() : tab === "scores" ? renderScores() : tab === "innovation" ? renderInnovation() : renderSchedule();
   }
 
   // ---------- loading ----------

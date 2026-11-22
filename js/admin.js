@@ -24,6 +24,7 @@
     views: null,
     liveTimer: null,
     liveMsg: "",
+    reportTeam: "", aiBusy: "", aiMsg: "", aiErr: "",
   };
 
   // ---------- GitHub API ----------
@@ -113,7 +114,7 @@
   }
 
   // ---------- main UI ----------
-  const TABS = [["scores", "Scores"], ["schedule", "Schedule"], ["teams", "Teams"], ["settings", "Settings"]];
+  const TABS = [["scores", "Scores"], ["reports", "Reports"], ["schedule", "Schedule"], ["teams", "Teams"], ["settings", "Settings"]];
 
   function renderApp() {
     app.innerHTML = `
@@ -127,7 +128,7 @@
 
   function renderPanel() {
     const p = $("panel");
-    p.innerHTML = { scores: scoresHtml, schedule: scheduleHtml, teams: teamsHtml, settings: settingsHtml }[S.tab]();
+    p.innerHTML = { scores: scoresHtml, reports: reportsHtml, schedule: scheduleHtml, teams: teamsHtml, settings: settingsHtml }[S.tab]();
     if (S.tab === "settings") loadStats();
   }
 
@@ -162,6 +163,68 @@
       <div class="notice">Type each team's score, then press the orange <b>Publish</b> button at the bottom. Use <b>Mark live</b> to show which match is on the table right now. (${doneCount} of ${d.matches.length} matches finished)</div>
       <label class="check"><input type="checkbox" data-act="hidedone" ${S.hideDone ? "checked" : ""}> Hide finished matches</label>
       ${rows.join("") || '<div class="empty">Nothing to show.</div>'}`;
+  }
+
+  // ----- Reports tab (analysis + AI feedback) -----
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  function reportsHtml() {
+    const d = S.data, hasKey = !!FLLAI.getKey();
+    if (!d.teams.some((t) => t.id === S.reportTeam)) S.reportTeam = (d.teams[0] || {}).id || "";
+    const keyCard = hasKey
+      ? `<div class="card row"><span>Gemini is connected on this device.</span><button class="btn secondary small fixed" data-act="aikey-clear">Remove key</button></div>`
+      : `<div class="card stack"><h2>Connect Gemini (once)</h2>
+          <ol class="steps"><li>Open <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a> and sign in.</li><li>Click <b>Create API key</b> and copy it.</li><li>Paste it below.</li></ol>
+          <label class="field" style="margin:0"><span>Gemini API key</span><input type="password" id="aikey" autocomplete="off" placeholder="AIza…"></label>
+          <button class="btn" data-act="aikey-save">Save key</button>
+          <p class="muted small" style="margin:0">The key stays in this browser only. Feedback is written from a team's scores and mission results (no people's names), which are sent to Google's Gemini service.</p></div>`;
+    const f = S.reportTeam ? FLLAnalysis.teamFacts(d, S.reportTeam) : null;
+    const busy = !!S.aiBusy;
+    return `
+      ${S.aiMsg ? `<div class="notice">${esc(S.aiMsg)}</div>` : ""}
+      ${keyCard}
+      <div class="card stack">
+        <label class="field" style="margin:0"><span>Team</span><select data-f="report-team">${d.teams.map((t) => `<option value="${esc(t.id)}"${t.id === S.reportTeam ? " selected" : ""}>${esc(t.name)}</option>`).join("")}</select></label>
+        <div class="row" style="flex-wrap:wrap">
+          <button class="btn" data-act="ai-gen" ${hasKey && !busy && f && f.scoredCount ? "" : "disabled"}>Write feedback for this team</button>
+          <button class="btn secondary" data-act="ai-gen-all" ${hasKey && !busy ? "" : "disabled"}>Write for all teams</button>
+          <button class="btn secondary" data-act="ai-print">Print all reports</button>
+        </div>
+      </div>
+      ${f ? FLLReports.reportHtml(f, { busy: S.aiBusy === S.reportTeam, err: S.aiErr }) : '<div class="empty">Add teams first.</div>'}`;
+  }
+
+  const refreshReports = () => { if (S.tab === "reports") renderPanel(); };
+  async function writeFor(teamId) {
+    const facts = FLLAnalysis.teamFacts(S.data, teamId);
+    const r = await FLLAI.coach(facts);
+    FLLReports.setCache(teamId, { hash: FLLAnalysis.hash(facts), text: r.text, model: r.model, at: Date.now() });
+  }
+  async function genOne(teamId) {
+    if (S.aiBusy) return;
+    S.aiBusy = teamId; S.aiErr = ""; S.aiMsg = ""; refreshReports();
+    try { await writeFor(teamId); } catch (e) { S.aiErr = e.message; }
+    S.aiBusy = ""; refreshReports();
+  }
+  async function genAll() {
+    if (S.aiBusy) return;
+    const teams = S.data.teams.filter((t) => FLLAnalysis.teamFacts(S.data, t.id).scoredCount > 0);
+    if (!teams.length) { S.aiErr = "No scores have been entered yet."; return refreshReports(); }
+    let done = 0; S.aiErr = "";
+    for (const t of teams) {
+      S.aiBusy = t.id; S.aiMsg = `Writing feedback ${done + 1} of ${teams.length}: ${t.name}…`; refreshReports();
+      try { await writeFor(t.id); } catch (e) { S.aiErr = `Stopped after ${done} of ${teams.length}: ${e.message}`; break; }
+      done++; await sleep(700);
+    }
+    S.aiBusy = ""; S.aiMsg = S.aiErr ? "" : `Done: wrote feedback for ${done} team${done === 1 ? "" : "s"}.`; refreshReports();
+  }
+  function printAll() {
+    const area = document.createElement("div");
+    area.id = "print-area";
+    area.innerHTML = S.data.teams.map((t) => { const f = FLLAnalysis.teamFacts(S.data, t.id); return f.scoredCount ? FLLReports.reportHtml(f, { print: true }) : ""; }).join("") || "<p>No scores yet.</p>";
+    document.body.appendChild(area); document.body.classList.add("printing");
+    const done = () => { area.remove(); document.body.classList.remove("printing"); window.removeEventListener("afterprint", done); };
+    window.addEventListener("afterprint", done);
+    setTimeout(() => window.print(), 50);
   }
 
   // ----- Schedule tab -----
@@ -299,6 +362,7 @@
   app.addEventListener("change", (e) => {
     const t = e.target, d = S.data;
     if (t.dataset.act === "hidedone") { S.hideDone = t.checked; renderPanel(); return; }
+    if (t.dataset.f === "report-team") { S.reportTeam = t.value; S.aiErr = ""; renderPanel(); return; }
     const f = t.dataset.f;
     if (!f) return;
     const [kind, id, slot] = f.split(":");
@@ -359,6 +423,11 @@
         a.click();
         break;
       }
+      case "aikey-save": { const k = ($("aikey").value || "").trim(); if (k) { FLLAI.setKey(k); S.aiErr = ""; renderPanel(); } break; }
+      case "aikey-clear": if (confirm("Remove the Gemini key from this browser?")) { FLLAI.clearKey(); renderPanel(); } break;
+      case "ai-gen": genOne(S.reportTeam); break;
+      case "ai-gen-all": genAll(); break;
+      case "ai-print": printAll(); break;
       case "savepw": {
         const pw = ($("newpw").value || "").trim(), el = $("pw-msg");
         if (!pw) { el.innerHTML = '<div class="notice error">Type a password first.</div>'; break; }

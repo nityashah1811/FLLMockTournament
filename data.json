@@ -3,7 +3,7 @@
   "subtitle": "Robot Game & Innovation Project",
   "announcement": "",
   "currentMatch": "m3",
-  "updatedAt": "2026-11-22T22:38:50.793Z",
+  "updatedAt": "2026-11-22T22:50:21.792Z",
   "teams": [
     {
       "id": "t1",
@@ -454,9 +454,31 @@
       "time": "14:40",
       "t1": {
         "team": "t10",
-        "score": null,
-        "detail": null,
-        "scoredAt": null
+        "score": 175,
+        "detail": {
+          "season": "bioglow",
+          "sheet": {
+            "inspect": true,
+            "tokens": 2,
+            "v": {
+              "m01.a": true,
+              "m03.a": true,
+              "m03.b": true,
+              "m04.a": true,
+              "m05.a": 0,
+              "m10.a": true,
+              "m10.b": true,
+              "m11.a": true,
+              "m12.a": true,
+              "m12.b": true
+            }
+          },
+          "computed": 175,
+          "manual": false,
+          "manualScore": null,
+          "note": ""
+        },
+        "scoredAt": "2026-11-22T22:50:21.792Z"
       },
       "t2": {
         "team": "t3",

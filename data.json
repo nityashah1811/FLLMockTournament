@@ -3,70 +3,63 @@
   "subtitle": "Robot Game & Innovation Project",
   "announcement": "",
   "currentMatch": "",
-  "updatedAt": "2026-11-22T00:00:00.000Z",
+  "updatedAt": "2026-11-22T04:00:00.000Z",
   "teams": [
     {
       "id": "t1",
-      "name": "Fired-Up Founders",
-      "number": "71076"
-    },
-    {
-      "id": "t2",
-      "name": "Waves Flames and Games",
-      "number": "62105"
-    },
-    {
-      "id": "t3",
       "name": "Code Crushers PDX",
-      "number": "68234"
-    },
-    {
-      "id": "t4",
-      "name": "Disaster Frogs",
-      "number": "65924"
-    },
-    {
-      "id": "t5",
-      "name": "Robo Phoenix",
       "number": ""
     },
     {
-      "id": "t6",
-      "name": "Bunny Robotics",
-      "number": "75839"
+      "id": "t2",
+      "name": "Disaster Frogs",
+      "number": ""
     },
     {
-      "id": "t7",
-      "name": "Girl Scout Troop",
-      "number": "60614"
-    },
-    {
-      "id": "t8",
+      "id": "t3",
       "name": "Kinetic Kaptains",
       "number": ""
     },
     {
-      "id": "t9",
+      "id": "t4",
+      "name": "Fired-Up Founders",
+      "number": ""
+    },
+    {
+      "id": "t5",
       "name": "Electrified Entrepreneurs",
-      "number": "70511"
+      "number": ""
+    },
+    {
+      "id": "t6",
+      "name": "Girl Scout Troop",
+      "number": ""
+    },
+    {
+      "id": "t7",
+      "name": "Waves Flames and Games",
+      "number": ""
+    },
+    {
+      "id": "t8",
+      "name": "Robo Phoenix",
+      "number": ""
+    },
+    {
+      "id": "t9",
+      "name": "Bunny Robotics",
+      "number": ""
+    },
+    {
+      "id": "t10",
+      "name": "Electric Strikers",
+      "number": ""
     }
   ],
   "matches": [
     {
       "id": "m1",
       "time": "13:20",
-      "t1": {
-        "team": "t1",
-        "score": null
-      },
-      "t2": {
-        "team": "t2",
-        "score": null
-      }
-    },
-    {
-      "id": "m2",
-      "time": "13:30",
       "t1": {
         "team": "t3",
         "score": null
@@ -77,14 +70,26 @@
       }
     },
     {
-      "id": "m3",
-      "time": "13:40",
+      "id": "m2",
+      "time": "13:30",
       "t1": {
-        "team": "t5",
+        "team": "t1",
         "score": null
       },
       "t2": {
-        "team": "t6",
+        "team": "t2",
+        "score": null
+      }
+    },
+    {
+      "id": "m3",
+      "time": "13:40",
+      "t1": {
+        "team": "t10",
+        "score": null
+      },
+      "t2": {
+        "team": "t8",
         "score": null
       }
     },
@@ -96,7 +101,7 @@
         "score": null
       },
       "t2": {
-        "team": "t8",
+        "team": "t6",
         "score": null
       }
     },
@@ -104,11 +109,11 @@
       "id": "m5",
       "time": "14:00",
       "t1": {
-        "team": "t9",
+        "team": "t4",
         "score": null
       },
       "t2": {
-        "team": "",
+        "team": "t9",
         "score": null
       }
     },
@@ -116,11 +121,11 @@
       "id": "m6",
       "time": "14:10",
       "t1": {
-        "team": "t2",
+        "team": "t5",
         "score": null
       },
       "t2": {
-        "team": "t3",
+        "team": "t2",
         "score": null
       }
     },
@@ -128,11 +133,11 @@
       "id": "m7",
       "time": "14:20",
       "t1": {
-        "team": "t4",
+        "team": "t1",
         "score": null
       },
       "t2": {
-        "team": "t5",
+        "team": "t10",
         "score": null
       }
     },
@@ -140,7 +145,7 @@
       "id": "m8",
       "time": "14:30",
       "t1": {
-        "team": "t6",
+        "team": "t3",
         "score": null
       },
       "t2": {
@@ -164,11 +169,11 @@
       "id": "m10",
       "time": "14:50",
       "t1": {
-        "team": "t1",
+        "team": "t5",
         "score": null
       },
       "t2": {
-        "team": "t3",
+        "team": "t6",
         "score": null
       }
     },
@@ -176,11 +181,11 @@
       "id": "m11",
       "time": "15:00",
       "t1": {
-        "team": "t2",
+        "team": "t4",
         "score": null
       },
       "t2": {
-        "team": "t4",
+        "team": "t1",
         "score": null
       }
     },
@@ -188,7 +193,7 @@
       "id": "m12",
       "time": "15:10",
       "t1": {
-        "team": "t5",
+        "team": "t10",
         "score": null
       },
       "t2": {
@@ -200,7 +205,7 @@
       "id": "m13",
       "time": "15:20",
       "t1": {
-        "team": "t6",
+        "team": "t2",
         "score": null
       },
       "t2": {
@@ -216,7 +221,19 @@
         "score": null
       },
       "t2": {
-        "team": "t1",
+        "team": "t5",
+        "score": null
+      }
+    },
+    {
+      "id": "m15",
+      "time": "15:40",
+      "t1": {
+        "team": "t6",
+        "score": null
+      },
+      "t2": {
+        "team": "t3",
         "score": null
       }
     }
@@ -231,31 +248,31 @@
     {
       "id": "i2",
       "time": "13:30",
-      "team": "t7",
+      "team": "t5",
       "done": false
     },
     {
       "id": "i3",
       "time": "13:40",
-      "team": "t8",
+      "team": "t3",
       "done": false
     },
     {
       "id": "i4",
       "time": "14:00",
-      "team": "t1",
+      "team": "t8",
       "done": false
     },
     {
       "id": "i5",
       "time": "14:10",
-      "team": "t5",
+      "team": "t6",
       "done": false
     },
     {
       "id": "i6",
       "time": "14:20",
-      "team": "t6",
+      "team": "t4",
       "done": false
     }
   ]

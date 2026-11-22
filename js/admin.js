@@ -24,7 +24,7 @@
     views: null,
     liveTimer: null,
     liveMsg: "",
-    reportTeam: "", aiBusy: "", aiMsg: "", aiErr: "", aiModels: null, aiModelErr: "",
+    reportTeam: "", aiBusy: "", aiMsg: "", aiErr: "", aiModels: null, aiModelErr: "", aiShared: undefined,
   };
 
   // ---------- GitHub API ----------
@@ -176,8 +176,14 @@
         <label class="field" style="margin:0"><span class="small">Model not in the list? Type its name (for example <code>gemini-flash-lite-latest</code>):</span><input type="text" data-f="ai-model-custom" autocomplete="off" placeholder="optional"></label>
         <p class="muted small" style="margin:0">“Flash” models are fast and cheap. “Pro” models think harder and write better advice but are slower and use more of your quota.</p>`
       : `<span class="muted small">Model: <b>${esc(choice || "Automatic (Flash)")}</b> · <a href="#" data-act="ai-model-open">Change model</a></span>${S.aiModelErr ? `<div class="notice error small">${esc(S.aiModelErr)}</div>` : ""}`;
+    if (hasKey && S.aiShared === undefined) { S.aiShared = null; FLLAuth.isShared().then((v) => { S.aiShared = v; refreshReports(); }); }
+    const shareBox = !hasKey ? "" : S.aiShared
+      ? `<p class="small muted" style="margin:0">This key is shared: other devices get it automatically when they type the password. <a href="#" data-act="aikey-unshare">Stop sharing</a></p>`
+      : `<details class="small"><summary>Use this key on other devices too</summary>
+          <p class="muted" style="margin:6px 0">The key is stored locked with the password, the same way as the GitHub key. A short password can be guessed by someone determined, and they could then use your Gemini key. Only share a free-tier key (no billing), and delete it at aistudio.google.com/apikey after the event.</p>
+          <div class="row" style="flex-wrap:wrap"><input type="password" id="sharepw" autocomplete="off" placeholder="the password everyone uses" style="flex:2 1 200px"><button class="btn small fixed" data-act="aikey-share">Share key</button></div></details>`;
     const keyCard = hasKey
-      ? `<div class="card stack"><div class="row"><span>Gemini is connected on this device.</span><button class="btn secondary small fixed" data-act="aikey-clear">Remove key</button></div>${modelBox}</div>`
+      ? `<div class="card stack"><div class="row"><span>Gemini is connected on this device.</span><button class="btn secondary small fixed" data-act="aikey-clear">Remove key</button></div>${modelBox}${shareBox}<div id="share-msg"></div></div>`
       : `<div class="card stack"><h2>Connect Gemini (once)</h2>
           <ol class="steps"><li>Open <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a> and sign in.</li><li>Click <b>Create API key</b> and copy it.</li><li>Paste it below.</li></ol>
           <label class="field" style="margin:0"><span>Gemini API key</span><input type="password" id="aikey" autocomplete="off" placeholder="AIza…"></label>
@@ -431,6 +437,19 @@
       }
       case "aikey-save": { const k = ($("aikey").value || "").trim(); if (k) { FLLAI.setKey(k); S.aiErr = ""; renderPanel(); } break; }
       case "aikey-clear": if (confirm("Remove the Gemini key from this browser?")) { FLLAI.clearKey(); renderPanel(); } break;
+      case "aikey-share": {
+        const pw = ($("sharepw").value || "").trim(), el = $("share-msg");
+        if (!pw) { el.innerHTML = '<div class="notice error">Type the password first.</div>'; break; }
+        el.innerHTML = '<div class="notice">Saving…</div>';
+        FLLAuth.shareSecret(pw, FLLAI.getKey()).then(
+          () => { S.aiShared = true; refreshReports(); },
+          (er) => { el.innerHTML = `<div class="notice error">${esc(er.message)}</div>`; });
+        break;
+      }
+      case "aikey-unshare":
+        e.preventDefault();
+        if (confirm("Stop sharing the Gemini key? Other devices will need it pasted again.")) FLLAuth.unshareSecret().then(() => { S.aiShared = false; refreshReports(); }, (er) => { S.aiErr = er.message; refreshReports(); });
+        break;
       case "ai-model-open":
         e.preventDefault(); S.aiModels = "loading"; S.aiModelErr = ""; renderPanel();
         FLLAI.listModels().then((l) => { S.aiModels = l; }, (er) => { S.aiModels = null; S.aiModelErr = er.message; }).then(refreshReports);

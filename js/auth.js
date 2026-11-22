@@ -53,6 +53,11 @@
       try { token = await open(pw, vault); }
       catch (err) { return showPassword(el, onReady, vault, "That password isn't right. Try again."); }
       GH.setToken(token);
+      // If the organizer chose to share the Gemini key, unlock it with the same password.
+      try {
+        const ai = await GH.fetchFile("ai.json");
+        if (ai && window.FLLAI) FLLAI.setSessionKey(await open(pw, ai));
+      } catch (err) { /* no shared key: nothing to do */ }
       onReady();
     };
   }
@@ -128,5 +133,17 @@
     await GH.saveVault(token, await seal(newPassword, token));
   }
 
-  window.FLLAuth = { gate, changePassword };
+  // Share a secret (the Gemini key) with every device that knows the password. Refuses a mistyped password.
+  async function shareSecret(password, secret) {
+    const token = GH.getToken();
+    if (!token) throw new Error("Not signed in.");
+    const vault = await GH.fetchVault();
+    if (!vault) throw new Error("Set up the password first.");
+    try { await open(password, vault); } catch (e) { throw new Error("That isn't the current password. Type the password everyone uses."); }
+    await GH.saveFile(token, "ai.json", await seal(password, secret), "Update shared AI key");
+  }
+  async function unshareSecret() { await GH.deleteFile(GH.getToken(), "ai.json"); }
+  async function isShared() { try { return !!(await GH.fetchFile("ai.json")); } catch (e) { return false; } }
+
+  window.FLLAuth = { gate, changePassword, shareSecret, unshareSecret, isShared };
 })();

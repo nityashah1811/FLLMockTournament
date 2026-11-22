@@ -129,30 +129,46 @@
     throw new Error("Lots of people are saving at once. Wait a few seconds and try again.");
   }
 
-  // ---------- password vault (auth.json): the key, encrypted with the password ----------
-  const VAULT_API = `https://api.github.com/repos/${CFG.owner}/${CFG.repo}/contents/auth.json`;
+  // ---------- locked files in the repo: auth.json (the GitHub key) and ai.json (the optional shared Gemini key) ----------
+  const FILE_API = (name) => `https://api.github.com/repos/${CFG.owner}/${CFG.repo}/contents/${name}`;
 
-  async function fetchVault() {
+  async function fetchFile(name) {
     // Normal route: the published site (fast, no rate limit). If it is not there yet, ask GitHub directly.
-    let r = await fetch(FLL.ROOT + "auth.json?v=" + Math.floor(Date.now() / 10000), { cache: "no-store" });
+    let r = await fetch(FLL.ROOT + name + "?v=" + Math.floor(Date.now() / 10000), { cache: "no-store" });
     if (r.ok) { try { return await r.json(); } catch (e) { /* fall through */ } }
-    r = await fetch(`${VAULT_API}?ref=${encodeURIComponent(CFG.branch)}&_=${Date.now()}`, { headers: { Accept: "application/vnd.github.raw+json" }, cache: "no-store" });
+    r = await fetch(`${FILE_API(name)}?ref=${encodeURIComponent(CFG.branch)}&_=${Date.now()}`, { headers: { Accept: "application/vnd.github.raw+json" }, cache: "no-store" });
     if (r.status === 404) return null;
     if (!r.ok) { const e = new Error("Could not check the password (" + r.status + "). Check your internet connection and try again."); e.network = true; throw e; }
     return JSON.parse(await r.text());
   }
 
-  async function saveVault(token, vault) {
-    let sha;
-    const g = await fetch(`${VAULT_API}?ref=${encodeURIComponent(CFG.branch)}&_=${Date.now()}`, { headers: headers(token), cache: "no-store" });
-    if (g.ok) sha = (await g.json()).sha;
-    const res = await fetch(VAULT_API, {
+  async function currentSha(token, name) {
+    const g = await fetch(`${FILE_API(name)}?ref=${encodeURIComponent(CFG.branch)}&_=${Date.now()}`, { headers: headers(token), cache: "no-store" });
+    return g.ok ? (await g.json()).sha : undefined;
+  }
+
+  async function saveFile(token, name, obj, message) {
+    const sha = await currentSha(token, name);
+    const res = await fetch(FILE_API(name), {
       method: "PUT", headers: Object.assign({ "Content-Type": "application/json" }, headers(token)),
-      body: JSON.stringify({ message: "Update password vault", content: b64enc(JSON.stringify(vault, null, 2) + "\n"), sha, branch: CFG.branch }),
+      body: JSON.stringify({ message: message || "Update " + name, content: b64enc(JSON.stringify(obj, null, 2) + "\n"), sha, branch: CFG.branch }),
     });
     const body = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(apiError(res, body));
   }
 
-  window.FLLGH = { getToken, setToken, clearToken, legacyToken, clearLegacy, load, update, pushMerged, merge3, clone, apiError, fetchVault, saveVault };
+  async function deleteFile(token, name) {
+    const sha = await currentSha(token, name);
+    if (!sha) return;
+    const res = await fetch(FILE_API(name), {
+      method: "DELETE", headers: Object.assign({ "Content-Type": "application/json" }, headers(token)),
+      body: JSON.stringify({ message: "Remove " + name, sha, branch: CFG.branch }),
+    });
+    if (!res.ok) throw new Error(apiError(res, await res.json().catch(() => ({}))));
+  }
+
+  const fetchVault = () => fetchFile("auth.json");
+  const saveVault = (token, vault) => saveFile(token, "auth.json", vault, "Update password vault");
+
+  window.FLLGH = { getToken, setToken, clearToken, legacyToken, clearLegacy, load, update, pushMerged, merge3, clone, apiError, fetchVault, saveVault, fetchFile, saveFile, deleteFile };
 })();

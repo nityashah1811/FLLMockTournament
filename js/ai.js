@@ -11,9 +11,12 @@
   const KEY_STORE = "fll_gemini_key", MODEL_STORE = "fll_gemini_model", CHOICE_STORE = "fll_gemini_model_choice";
   const BASE = "https://generativelanguage.googleapis.com/v1beta";
 
-  const getKey = () => FLL.store.get(KEY_STORE) || "";
+  let memKey = "";
+  const getKey = () => FLL.store.get(KEY_STORE) || (() => { try { return sessionStorage.getItem(KEY_STORE) || memKey; } catch (e) { return memKey; } })();
+  // Used when the key was unlocked at login with the shared password; kept for this browser tab only.
+  const setSessionKey = (k) => { memKey = k; try { sessionStorage.setItem(KEY_STORE, k); } catch (e) { /* tab storage blocked */ } };
   const setKey = (k) => FLL.store.set(KEY_STORE, k.trim());
-  const clearKey = () => { FLL.store.del(KEY_STORE); FLL.store.del(MODEL_STORE); FLL.store.del(CHOICE_STORE); };
+  const clearKey = () => { memKey = ""; try { sessionStorage.removeItem(KEY_STORE); } catch (e) { /* ignore */ } FLL.store.del(KEY_STORE); FLL.store.del(MODEL_STORE); FLL.store.del(CHOICE_STORE); };
   // The model the organizer picked by hand ("" = automatic).
   const getChoice = () => FLL.store.get(CHOICE_STORE) || "";
   const setChoice = (name) => { if (name) FLL.store.set(CHOICE_STORE, name); else FLL.store.del(CHOICE_STORE); };
@@ -180,5 +183,5 @@ Reply with JSON only, in the same shape as the example.`;
     return { data, model: r.model };
   }
 
-  window.FLLAI = { getKey, setKey, clearKey, getChoice, setChoice, listModels, generate, coach, pickModel, SYSTEM };
+  window.FLLAI = { getKey, setKey, setSessionKey, clearKey, getChoice, setChoice, listModels, generate, coach, pickModel, SYSTEM };
 })();

@@ -8,12 +8,15 @@
  */
 (function () {
   "use strict";
-  const KEY_STORE = "fll_gemini_key", MODEL_STORE = "fll_gemini_model";
+  const KEY_STORE = "fll_gemini_key", MODEL_STORE = "fll_gemini_model", CHOICE_STORE = "fll_gemini_model_choice";
   const BASE = "https://generativelanguage.googleapis.com/v1beta";
 
   const getKey = () => FLL.store.get(KEY_STORE) || "";
   const setKey = (k) => FLL.store.set(KEY_STORE, k.trim());
-  const clearKey = () => { FLL.store.del(KEY_STORE); FLL.store.del(MODEL_STORE); };
+  const clearKey = () => { FLL.store.del(KEY_STORE); FLL.store.del(MODEL_STORE); FLL.store.del(CHOICE_STORE); };
+  // The model the organizer picked by hand ("" = automatic).
+  const getChoice = () => FLL.store.get(CHOICE_STORE) || "";
+  const setChoice = (name) => { if (name) FLL.store.set(CHOICE_STORE, name); else FLL.store.del(CHOICE_STORE); };
 
   async function api(path, key, body) {
     const ctl = new AbortController(), timer = setTimeout(() => ctl.abort(), 90000);
@@ -62,6 +65,16 @@
     return name;
   }
 
+  // Every model this key can use for writing text, newest first.
+  async function listModels() {
+    const key = getKey();
+    if (!key) throw new Error("Add your Gemini API key first.");
+    const j = await api("/models?pageSize=200", key);
+    const names = (j.models || []).filter((m) => (m.supportedGenerationMethods || []).includes("generateContent")).map((m) => m.name.replace(/^models\//, ""))
+      .filter((n) => /^gemini/.test(n) && !/embedding|tts|image|live|audio|robotics|computer-use/.test(n));
+    return names.sort((a, b) => (parseFloat((b.match(/gemini-([\d.]+)/) || [0, 0])[1]) - parseFloat((a.match(/gemini-([\d.]+)/) || [0, 0])[1])) || a.localeCompare(b));
+  }
+
   // The one place that talks to the AI. Returns plain text.
   async function generate(system, user) {
     const key = getKey();
@@ -71,9 +84,14 @@
       contents: [{ role: "user", parts: [{ text: user }] }],
       generationConfig: { temperature: 0.6, maxOutputTokens: 4096 },
     });
-    let model = await pickModel(key), j;
+    const chosen = getChoice();
+    let model = chosen || await pickModel(key), j;
     try { j = await run(model); }
-    catch (e) { if (e.status !== 404) throw e; model = await pickModel(key, true); j = await run(model); }
+    catch (e) {
+      if (e.status !== 404) throw e;
+      if (chosen) throw new Error(`Gemini can't use the model "${chosen}" with this key. Choose another model (Reports tab → Change model).`);
+      model = await pickModel(key, true); j = await run(model);
+    }
     const c = (j.candidates || [])[0];
     const text = c && c.content && c.content.parts ? c.content.parts.map((p) => p.text || "").join("").trim() : "";
     if (!text) throw new Error(j.promptFeedback && j.promptFeedback.blockReason ? "Gemini blocked this request (" + j.promptFeedback.blockReason + ")." : "Gemini sent back an empty answer. Try again.");
@@ -102,5 +120,5 @@ Rules for your answer:
     return generate(SYSTEM, user);
   }
 
-  window.FLLAI = { getKey, setKey, clearKey, generate, coach, pickModel, SYSTEM };
+  window.FLLAI = { getKey, setKey, clearKey, getChoice, setChoice, listModels, generate, coach, pickModel, SYSTEM };
 })();

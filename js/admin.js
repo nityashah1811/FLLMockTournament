@@ -24,7 +24,7 @@
     views: null,
     liveTimer: null,
     liveMsg: "",
-    reportTeam: "", aiBusy: "", aiMsg: "", aiErr: "",
+    reportTeam: "", aiBusy: "", aiMsg: "", aiErr: "", aiModels: null, aiModelErr: "",
   };
 
   // ---------- GitHub API ----------
@@ -170,8 +170,13 @@
   function reportsHtml() {
     const d = S.data, hasKey = !!FLLAI.getKey();
     if (!d.teams.some((t) => t.id === S.reportTeam)) S.reportTeam = (d.teams[0] || {}).id || "";
+    const choice = hasKey ? FLLAI.getChoice() : "";
+    const modelBox = !hasKey ? "" : S.aiModels === "loading" ? `<p class="muted small" style="margin:0">Loading the models your key can use…</p>`
+      : Array.isArray(S.aiModels) ? `<div class="row" style="flex-wrap:wrap"><select data-f="ai-model" style="flex:2 1 220px"><option value="">Automatic (a fast Flash model)</option>${S.aiModels.map((n) => `<option value="${esc(n)}"${n === choice ? " selected" : ""}>${esc(n)}</option>`).join("")}</select><button class="btn small fixed" data-act="ai-model-save">Use this model</button><button class="btn secondary small fixed" data-act="ai-model-close">Cancel</button></div>
+        <p class="muted small" style="margin:0">“Flash” models are fast and cheap. “Pro” models think harder and write better advice but are slower and use more of your quota.</p>`
+      : `<span class="muted small">Model: <b>${esc(choice || "Automatic (Flash)")}</b> · <a href="#" data-act="ai-model-open">Change model</a></span>${S.aiModelErr ? `<div class="notice error small">${esc(S.aiModelErr)}</div>` : ""}`;
     const keyCard = hasKey
-      ? `<div class="card row"><span>Gemini is connected on this device.</span><button class="btn secondary small fixed" data-act="aikey-clear">Remove key</button></div>`
+      ? `<div class="card stack"><div class="row"><span>Gemini is connected on this device.</span><button class="btn secondary small fixed" data-act="aikey-clear">Remove key</button></div>${modelBox}</div>`
       : `<div class="card stack"><h2>Connect Gemini (once)</h2>
           <ol class="steps"><li>Open <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a> and sign in.</li><li>Click <b>Create API key</b> and copy it.</li><li>Paste it below.</li></ol>
           <label class="field" style="margin:0"><span>Gemini API key</span><input type="password" id="aikey" autocomplete="off" placeholder="AIza…"></label>
@@ -425,6 +430,12 @@
       }
       case "aikey-save": { const k = ($("aikey").value || "").trim(); if (k) { FLLAI.setKey(k); S.aiErr = ""; renderPanel(); } break; }
       case "aikey-clear": if (confirm("Remove the Gemini key from this browser?")) { FLLAI.clearKey(); renderPanel(); } break;
+      case "ai-model-open":
+        e.preventDefault(); S.aiModels = "loading"; S.aiModelErr = ""; renderPanel();
+        FLLAI.listModels().then((l) => { S.aiModels = l; }, (er) => { S.aiModels = null; S.aiModelErr = er.message; }).then(refreshReports);
+        break;
+      case "ai-model-close": S.aiModels = null; renderPanel(); break;
+      case "ai-model-save": { const v = (document.querySelector('[data-f="ai-model"]') || {}).value || ""; FLLAI.setChoice(v); S.aiModels = null; S.aiMsg = v ? `Now using ${v}. Write the feedback again to see the difference.` : "Back to automatic model choice."; renderPanel(); break; }
       case "ai-gen": genOne(S.reportTeam); break;
       case "ai-gen-all": genAll(); break;
       case "ai-print": printAll(); break;

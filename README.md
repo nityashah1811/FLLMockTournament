@@ -9,7 +9,7 @@ Two pages, one GitHub Pages site:
 
 ## Logo and certificate images
 
-`img/logo.png` is the emblem shown in the site header. The other files in `img/` (`logo-transparent.png`, `fll-challenge-reverse.png`, `cert-panel.png`) are the artwork used by the participation certificates in Google Slides.
+`img/logo.png` is the emblem shown in the site header. The other files in `img/` (`logo-transparent.png`, `fll-challenge-reverse.png`, `cert-bg.jpg`) are the artwork used by the participation certificates in Google Slides.
 
 ## One-time setup (≈5 minutes)
 

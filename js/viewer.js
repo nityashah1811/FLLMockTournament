@@ -9,6 +9,11 @@
   let lastJson = "";
   let tab = TABS.includes(location.hash.slice(1)) ? location.hash.slice(1) : "schedule";
   let myTeam = store.get("fll_myteam") || "";
+  // A QR code on a team's table can link to ?team=<id> so the page opens already showing that team.
+  try {
+    const qTeam = new URLSearchParams(location.search).get("team");
+    if (qTeam) { myTeam = qTeam; store.set("fll_myteam", qTeam); }
+  } catch (e) { /* ignore */ }
 
   // ---------- Robot Game schedule ----------
   const TAG = { done: "Final", now: "Now playing", next: "Up next" };

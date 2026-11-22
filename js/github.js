@@ -25,6 +25,7 @@
 
   function apiError(res, body) {
     const why = body && body.message ? ` (GitHub says: “${body.message}”)` : "";
+    if (/rate limit/i.test((body && body.message) || "")) return "GitHub is limiting requests right now. Wait a minute, then try again.";
     if (res.status === 401) return "GitHub says the key isn't valid or has expired. Ask the organizer for a new one." + why;
     if (res.status === 403 || res.status === 404)
       return `GitHub wouldn't let this key save ${CFG.dataFile} in ${CFG.owner}/${CFG.repo} (branch “${CFG.branch}”)${why}. ` +

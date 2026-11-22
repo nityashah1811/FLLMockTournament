@@ -33,12 +33,21 @@ Two pages, one GitHub Pages site:
 
 Published changes show up on the viewer page in about a minute (the admin page tells you when it's live). Viewer pages refresh themselves every 30 seconds.
 
+## Passwords and the saved key
+
+The Admin page (`/admin/`) and the Scorer page (`/score/`) both ask for a password. Saving needs a GitHub key, but nobody except the organizer ever handles it: it is stored in `auth.json`, locked with the password, and each page unlocks it in the browser tab after the password is typed.
+
+- **First time (organizer):** open `/admin/`, choose the password (e.g. `20288`) and press Save. If the device has no saved key, the page shows 5 short steps to make one: a GitHub *fine-grained token* for only this repository with **Contents: Read and write**, expiring just after the tournament.
+- **Change the password:** Admin → Settings → Password.
+- **Key expired or stopped working:** use "Organizer: set up or change the saved key" on the password screen.
+- A short password only keeps casual visitors out. Because the key is limited to this one repository and expires, the worst a determined person could do is edit this site's files.
+
 ## Scoring (the scorer page)
 
-Scorers use `https://nityashah1811.github.io/FLLMockTournament/score/` on their phones:
+Scorers open `https://nityashah1811.github.io/FLLMockTournament/score/` on their phones and type the password:
 
-1. Organizer: **Admin → Settings → Scorers → Copy scorer link**, and send it to each scorer. Opening the link once connects that phone.
-2. Scorer: choose **Both tables / Table 1 / Table 2**, tap **Score** next to a team, tick off the missions (the total updates live), then **Save score**.
+1. Choose **Both tables / Table 1 / Table 2**, then tap **Score** next to a team.
+2. Tick off the missions (the total updates live; tap a picture to enlarge it), then **Save score**.
 3. **Manual score override**: turn it on and type the final score by hand (a referee decision, a correction). The mission total is then ignored.
 4. Saved scores appear for other scorers within about 20 seconds and on the public leaderboard about a minute later.
 

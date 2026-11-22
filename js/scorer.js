@@ -33,26 +33,6 @@
     return SC.compute(st.sheet);
   }
 
-  // ---------- connect ----------
-  function renderConnect(err) {
-    st.view = "connect"; bar.hidden = true; document.body.classList.remove("has-bar");
-    app.innerHTML = `
-      <div class="card stack" style="margin-top:16px">
-        <h2>Connect this device</h2>
-        <p>Ask the organizer for the <b>scorer link</b> and open it on this device. That connects you automatically.</p>
-        <p class="muted small">Or paste the scorer key the organizer gave you:</p>
-        ${err ? `<div class="notice error">${esc(err)}</div>` : ""}
-        <label class="field"><span>Scorer key</span><input type="password" id="key" autocomplete="off" autocapitalize="off" placeholder="ghp_…"></label>
-        <button class="btn big" id="connect">Connect</button>
-      </div>`;
-    $("connect").onclick = async () => {
-      const t = $("key").value.trim(); if (!t) return;
-      $("connect").disabled = true; $("connect").textContent = "Checking…";
-      try { await GH.load(t); GH.setToken(t); await start(); }
-      catch (e) { renderConnect(e.message); }
-    };
-  }
-
   // ---------- match list ----------
   function listHtml() {
     const d = st.data, status = FLL.matchStatuses(d);
@@ -192,7 +172,6 @@
   }
 
   function render() {
-    if (st.view === "connect") return;
     app.classList.toggle("manual-on", st.view === "sheet" && st.manual);
     app.innerHTML = st.view === "sheet" ? sheetHtml() : st.data ? listHtml() : '<p class="empty">Loading…</p>';
     updateBar();
@@ -269,17 +248,15 @@
   }
 
   async function start() {
-    // The organizer's scorer link looks like  .../score/#key=TOKEN  : save the key, then tidy the address.
-    const m = /[#&]key=([^&]+)/.exec(location.hash);
-    if (m) { GH.setToken(decodeURIComponent(m[1])); history.replaceState(null, "", location.pathname + location.search); }
-    if (!GH.getToken()) return renderConnect();
+    if (!GH.getToken()) { st.view = "boot"; bar.hidden = true; document.body.classList.remove("has-bar"); return FLLAuth.gate(app, start); }
     st.view = "boot";
     try {
       st.data = (await GH.load()).data;
       st.view = "list"; render();
       clearInterval(st.timer); st.timer = setInterval(refresh, 20000);
     } catch (e) {
-      GH.clearToken(); renderConnect(e.message);
+      GH.clearToken(); st.view = "boot";
+      FLLAuth.gate(app, start, e.message);
     }
   }
 

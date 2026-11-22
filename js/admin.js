@@ -10,12 +10,11 @@
 
   const $ = (id) => document.getElementById(id);
   const app = $("app");
-  const TOKEN_KEY = "fll_admin_token";
   const DRAFT_KEY = "fll_admin_draft";
   const API = `https://api.github.com/repos/${CFG.owner}/${CFG.repo}/contents/${CFG.dataFile}`;
 
   const S = {
-    token: store.get(TOKEN_KEY) || "",
+    token: FLLGH.getToken(),
     data: null,
     base: null,   // the version we last loaded/published (used to merge with other people's changes)
     sha: "",
@@ -111,37 +110,6 @@
       } catch (e) { /* keep trying */ }
       if (tries > 30) clearInterval(S.liveTimer);
     }, 8000);
-  }
-
-  // ---------- connect screen ----------
-  function renderConnect(err) {
-    $("bar").hidden = true;
-    app.innerHTML = `
-      <div class="card stack" style="margin-top:16px">
-        <h2>Connect to GitHub (one time)</h2>
-        <p>To save changes, this page needs a private “key” (a GitHub access token). It's stored only in this browser. Anyone without it can look at this page but can't change anything.</p>
-        <h3 style="margin:4px 0 0">Easiest way</h3>
-        <ol class="steps">
-          <li>Open <a href="https://github.com/settings/tokens/new?scopes=public_repo&description=FLL%20admin" target="_blank" rel="noopener"><b>this link</b></a> and sign in as <b>${esc(CFG.owner)}</b>.</li>
-          <li>The <b>public_repo</b> box is already ticked. Set <b>Expiration</b> to a date after your tournament.</li>
-          <li>Scroll to the bottom and click <b>Generate token</b>.</li>
-          <li>Copy the token (starts with <code>ghp_</code>) and paste it below.</li>
-        </ol>
-        <details class="small muted"><summary>Prefer a fine-grained token?</summary>
-          <p>Open <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">the fine-grained token page</a>. Under <b>Repository access</b> choose <b>Only select repositories</b> and pick <b>${esc(CFG.repo)}</b> (the default “Public repositories” is read-only and will not work). Under <b>Permissions → Repository permissions</b> set <b>Contents</b> to <b>Read and write</b>.</p>
-        </details>
-        ${err ? `<div class="notice error">${esc(err)}</div>` : ""}
-        <label class="field"><span>Access token</span><input type="password" id="token" placeholder="github_pat_…" autocomplete="off" autocapitalize="off"></label>
-        <button class="btn" id="connect">Connect</button>
-      </div>`;
-    $("connect").onclick = async () => {
-      const t = $("token").value.trim();
-      if (!t) return;
-      S.token = t;
-      $("connect").disabled = true;
-      $("connect").textContent = "Checking…";
-      await start(true);
-    };
   }
 
   // ---------- main UI ----------
@@ -268,11 +236,15 @@
       </div>
 
       <div class="card stack"><h2>Scorers</h2>
-        <p class="muted small" style="margin:0">Scorers pick a match and enter scores on their own phones at <b>${esc(FLL.ROOT)}score/</b>. Each scorer opens the <b>scorer link</b> once to connect their device.</p>
-        <button class="btn" data-act="copyscorer">Copy scorer link</button>
+        <p class="muted small" style="margin:0">Scorers pick a match and enter scores on their own phones at <b>${esc(FLL.ROOT)}score/</b>. They type the same password as you.</p>
         <a class="btn secondary" href="../score/" target="_blank" rel="noopener" style="text-align:center;text-decoration:none">Open the scorer page</a>
-        <div class="notice warn small" style="margin:0"><b>Keep the link private.</b> It contains a key that can edit the tournament data. Share it only with your scorers (text or message, not social media). For safety, make the key on GitHub with a short expiry (for example 3 days) and delete it after the event.</div>
-        <div id="scorer-msg"></div>
+      </div>
+
+      <div class="card stack"><h2>Password</h2>
+        <p class="muted small" style="margin:0">Everyone who opens the Admin or Scorer page types this password. A changed password reaches other devices in about a minute.</p>
+        <label class="field" style="margin:0"><span>New password</span><input type="text" id="newpw" autocomplete="off" placeholder="e.g. 20288"></label>
+        <button class="btn" data-act="savepw">Save password</button>
+        <div id="pw-msg"></div>
       </div>
 
       <div class="card stack"><h2>Tools</h2>
@@ -280,9 +252,8 @@
         <button class="btn danger" data-act="clearscores">Clear all scores</button>
       </div>
 
-      <div class="card stack"><h2>GitHub connection</h2>
-        <p class="muted small" style="margin:0">Connected to <b>${esc(CFG.owner)}/${esc(CFG.repo)}</b>.</p>
-        <button class="btn danger" data-act="disconnect">Disconnect this browser</button>
+      <div class="card stack"><h2>This device</h2>
+        <button class="btn danger" data-act="lock">Lock this device</button>
       </div>`;
   }
 
@@ -388,17 +359,17 @@
         a.click();
         break;
       }
-      case "copyscorer": {
-        const url = FLL.ROOT + "score/#key=" + encodeURIComponent(FLLGH.getToken());
-        const done = () => { const el = $("scorer-msg"); if (el) el.innerHTML = '<div class="notice ok">Copied. Send it to your scorers.</div>'; };
-        if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(url).then(done, () => prompt("Copy this scorer link:", url));
-        else prompt("Copy this scorer link:", url);
+      case "savepw": {
+        const pw = ($("newpw").value || "").trim(), el = $("pw-msg");
+        if (!pw) { el.innerHTML = '<div class="notice error">Type a password first.</div>'; break; }
+        el.innerHTML = '<div class="notice">Saving…</div>';
+        FLLAuth.changePassword(pw).then(
+          () => { el.innerHTML = `<div class="notice ok">Saved. The password is now <b>${esc(pw)}</b>.</div>`; },
+          (e) => { el.innerHTML = `<div class="notice error">${esc(e.message)}</div>`; });
         break;
       }
-      case "disconnect":
-        if (confirm("Disconnect this browser from GitHub? Unpublished changes on this screen will be lost.")) {
-          store.del(TOKEN_KEY); clearDraft(); S.token = ""; S.dirty = false; S.data = null; renderConnect();
-        }
+      case "lock":
+        if (!S.dirty || confirm("You have unpublished changes. Lock anyway and lose them?")) { clearDraft(); FLLGH.clearToken(); location.reload(); }
         break;
     }
   });
@@ -407,21 +378,18 @@
   window.addEventListener("beforeunload", (e) => { if (S.dirty) { e.preventDefault(); e.returnValue = ""; } });
 
   // ---------- start ----------
-  async function start(fromConnect) {
-    if (!S.token) return renderConnect();
+  async function start() {
+    S.token = FLLGH.getToken();
+    if (!S.token) return FLLAuth.gate(app, start);
     app.innerHTML = `<p class="empty">Loading the latest schedule from GitHub…</p>`;
     try {
       const r = await ghLoad();
       S.data = r.data;
       S.base = FLLGH.clone(r.data);
       S.sha = r.sha;
-      store.set(TOKEN_KEY, S.token);
     } catch (e) {
-      if (fromConnect || !store.get(TOKEN_KEY)) S.token = "";
-      else app.innerHTML = "";
-      if (!S.token) return renderConnect(e.message);
-      app.innerHTML = `<div class="notice error" style="margin-top:16px">${esc(e.message)}</div><button class="btn" onclick="location.reload()">Try again</button>`;
-      return;
+      FLLGH.clearToken(); S.token = "";
+      return FLLAuth.gate(app, start, e.message);
     }
     // Restore unpublished work from an earlier visit (e.g. phone died, page reloaded)
     const raw = store.get(DRAFT_KEY);
@@ -454,5 +422,5 @@
   }
   setInterval(pull, 30000);
 
-  start(false);
+  start();
 })();

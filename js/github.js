@@ -18,18 +18,23 @@
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   const clone = (x) => JSON.parse(JSON.stringify(x));
 
-  const getToken = () => FLL.store.get(TOKEN_KEY) || "";
-  const setToken = (t) => FLL.store.set(TOKEN_KEY, t);
-  const clearToken = () => FLL.store.del(TOKEN_KEY);
+  // The key is kept only for this browser tab (sessionStorage), so each new visit asks for the password.
+  let memTok = "";
+  const getToken = () => { try { return sessionStorage.getItem(TOKEN_KEY) || memTok; } catch (e) { return memTok; } };
+  const setToken = (t) => { memTok = t; try { sessionStorage.setItem(TOKEN_KEY, t); } catch (e) { /* tab storage blocked: memory only */ } };
+  const clearToken = () => { memTok = ""; try { sessionStorage.removeItem(TOKEN_KEY); } catch (e) { /* ignore */ } };
+  // Older versions saved the key on the device itself; setup can move it into the password vault.
+  const legacyToken = () => FLL.store.get(TOKEN_KEY) || "";
+  const clearLegacy = () => FLL.store.del(TOKEN_KEY);
   const headers = (token) => ({ Authorization: "Bearer " + (token || getToken()), Accept: "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28" });
 
   function apiError(res, body) {
     const why = body && body.message ? ` (GitHub says: “${body.message}”)` : "";
     if (/rate limit/i.test((body && body.message) || "")) return "GitHub is limiting requests right now. Wait a minute, then try again.";
-    if (res.status === 401) return "GitHub says the key isn't valid or has expired. Ask the organizer for a new one." + why;
+    if (res.status === 401) return "The saved key isn't valid any more (it may have expired). Organizer: set up the key again from the password screen." + why;
     if (res.status === 403 || res.status === 404)
-      return `GitHub wouldn't let this key save ${CFG.dataFile} in ${CFG.owner}/${CFG.repo} (branch “${CFG.branch}”)${why}. ` +
-        `The key needs permission to write to this repository. Ask the organizer for a new key.`;
+      return `The saved key isn't allowed to save changes to ${CFG.owner}/${CFG.repo}${why}. ` +
+        `Organizer: set up the key again from the password screen, using a key with “Contents: Read and write” for this repository.`;
     return "GitHub error " + res.status + why;
   }
 
@@ -124,5 +129,30 @@
     throw new Error("Lots of people are saving at once. Wait a few seconds and try again.");
   }
 
-  window.FLLGH = { getToken, setToken, clearToken, load, update, pushMerged, merge3, clone, apiError };
+  // ---------- password vault (auth.json): the key, encrypted with the password ----------
+  const VAULT_API = `https://api.github.com/repos/${CFG.owner}/${CFG.repo}/contents/auth.json`;
+
+  async function fetchVault() {
+    // Normal route: the published site (fast, no rate limit). If it is not there yet, ask GitHub directly.
+    let r = await fetch(FLL.ROOT + "auth.json?v=" + Math.floor(Date.now() / 10000), { cache: "no-store" });
+    if (r.ok) { try { return await r.json(); } catch (e) { /* fall through */ } }
+    r = await fetch(`${VAULT_API}?ref=${encodeURIComponent(CFG.branch)}&_=${Date.now()}`, { headers: { Accept: "application/vnd.github.raw+json" }, cache: "no-store" });
+    if (r.status === 404) return null;
+    if (!r.ok) { const e = new Error("Could not check the password (" + r.status + "). Check your internet connection and try again."); e.network = true; throw e; }
+    return JSON.parse(await r.text());
+  }
+
+  async function saveVault(token, vault) {
+    let sha;
+    const g = await fetch(`${VAULT_API}?ref=${encodeURIComponent(CFG.branch)}&_=${Date.now()}`, { headers: headers(token), cache: "no-store" });
+    if (g.ok) sha = (await g.json()).sha;
+    const res = await fetch(VAULT_API, {
+      method: "PUT", headers: Object.assign({ "Content-Type": "application/json" }, headers(token)),
+      body: JSON.stringify({ message: "Update password vault", content: b64enc(JSON.stringify(vault, null, 2) + "\n"), sha, branch: CFG.branch }),
+    });
+    const body = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(apiError(res, body));
+  }
+
+  window.FLLGH = { getToken, setToken, clearToken, legacyToken, clearLegacy, load, update, pushMerged, merge3, clone, apiError, fetchVault, saveVault };
 })();

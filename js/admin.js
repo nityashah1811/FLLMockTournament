@@ -173,6 +173,7 @@
     const choice = hasKey ? FLLAI.getChoice() : "";
     const modelBox = !hasKey ? "" : S.aiModels === "loading" ? `<p class="muted small" style="margin:0">Loading the models your key can use…</p>`
       : Array.isArray(S.aiModels) ? `<div class="row" style="flex-wrap:wrap"><select data-f="ai-model" style="flex:2 1 220px"><option value="">Automatic (a fast Flash model)</option>${S.aiModels.map((n) => `<option value="${esc(n)}"${n === choice ? " selected" : ""}>${esc(n)}</option>`).join("")}</select><button class="btn small fixed" data-act="ai-model-save">Use this model</button><button class="btn secondary small fixed" data-act="ai-model-close">Cancel</button></div>
+        <label class="field" style="margin:0"><span class="small">Model not in the list? Type its name (for example <code>gemini-flash-lite-latest</code>):</span><input type="text" data-f="ai-model-custom" autocomplete="off" placeholder="optional"></label>
         <p class="muted small" style="margin:0">“Flash” models are fast and cheap. “Pro” models think harder and write better advice but are slower and use more of your quota.</p>`
       : `<span class="muted small">Model: <b>${esc(choice || "Automatic (Flash)")}</b> · <a href="#" data-act="ai-model-open">Change model</a></span>${S.aiModelErr ? `<div class="notice error small">${esc(S.aiModelErr)}</div>` : ""}`;
     const keyCard = hasKey
@@ -202,7 +203,7 @@
   async function writeFor(teamId) {
     const facts = FLLAnalysis.teamFacts(S.data, teamId);
     const r = await FLLAI.coach(facts);
-    FLLReports.setCache(teamId, { hash: FLLAnalysis.hash(facts), text: r.text, model: r.model, at: Date.now() });
+    FLLReports.setCache(teamId, { hash: FLLAnalysis.hash(facts), data: r.data, model: r.model, at: Date.now() });
   }
   async function genOne(teamId) {
     if (S.aiBusy) return;
@@ -435,7 +436,7 @@
         FLLAI.listModels().then((l) => { S.aiModels = l; }, (er) => { S.aiModels = null; S.aiModelErr = er.message; }).then(refreshReports);
         break;
       case "ai-model-close": S.aiModels = null; renderPanel(); break;
-      case "ai-model-save": { const v = (document.querySelector('[data-f="ai-model"]') || {}).value || ""; FLLAI.setChoice(v); S.aiModels = null; S.aiMsg = v ? `Now using ${v}. Write the feedback again to see the difference.` : "Back to automatic model choice."; renderPanel(); break; }
+      case "ai-model-save": { const typed = ((document.querySelector('[data-f="ai-model-custom"]') || {}).value || "").trim().replace(/^models\//, ""); const v = typed || (document.querySelector('[data-f="ai-model"]') || {}).value || ""; FLLAI.setChoice(v); S.aiModels = null; S.aiMsg = v ? `Now using ${v}. Write the feedback again to see the difference.` : "Back to automatic model choice."; renderPanel(); break; }
       case "ai-gen": genOne(S.reportTeam); break;
       case "ai-gen-all": genAll(); break;
       case "ai-print": printAll(); break;

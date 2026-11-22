@@ -157,7 +157,69 @@
       if (m.fieldRate >= 0.6 && m.teamRate <= 0.34) facts.commonMisses.push({ name: m.name, fieldPercent: Math.round(m.fieldRate * 100) });
       if (m.teamRate >= 0.99 && m.fieldRate <= 0.4) facts.standouts.push({ name: m.name, fieldPercent: Math.round(m.fieldRate * 100) });
     });
+    diagnose(facts, runs, sheetRuns, board, row);
     return facts;
+  }
+
+  // ---------- deeper diagnosis: the things a good coach would notice ----------
+  function diagnose(facts, runs, sheetRuns, board, row) {
+    const named = (id) => SHEET.missions.find((m) => m.id === id).name;
+
+    // 1. what to work on first: points available, weighted by how often other teams manage it (proof it is reachable)
+    facts.priorities = facts.missions.filter((m) => m.lost > 0 && m.status !== "nodata").map((m) => ({
+      id: m.id, name: m.name, lost: m.lost, max: m.max, pointsPerMatch: m.pts.filter((v) => v !== null), status: m.status,
+      fieldPercent: m.fieldRate === null ? null : Math.round(m.fieldRate * 100),
+      neverItems: m.neverItems.map((i) => ({ label: i.label, max: i.max, rule: i.desc })),
+      someItems: m.someItems.map((i) => ({ label: i.label, times: i.times, of: i.of })),
+      priority: Math.round(m.lost * (0.4 + (m.fieldRate || 0)) * 10) / 10,
+    })).sort((a, b) => b.priority - a.priority).slice(0, 5);
+
+    // 2. strengths: what the team does reliably
+    facts.strengths = facts.missions.filter((m) => m.status === "full" || (m.status === "always" && m.earned > 0)).sort((a, b) => b.earned - a.earned).slice(0, 4)
+      .map((m) => ({ id: m.id, name: m.name, pointsPerMatch: m.pts.filter((v) => v !== null), max: m.max, full: m.status === "full" }));
+
+    // 3. why was the best match the best?
+    facts.bestVsWorst = null;
+    if (sheetRuns.length >= 2) {
+      const best = sheetRuns.reduce((a, b) => (b.score > a.score ? b : a)), worst = sheetRuns.reduce((a, b) => (b.score < a.score ? b : a));
+      if (best !== worst && best.score > worst.score) {
+        const diffs = SHEET.missions.map((m) => ({ name: m.name, delta: best.missions[m.id] - worst.missions[m.id] })).filter((x) => x.delta !== 0);
+        const tokenDiff = SHEET.tokens.points[best.tokens] - SHEET.tokens.points[worst.tokens];
+        facts.bestVsWorst = {
+          bestMatch: runs.indexOf(best) + 1, worstMatch: runs.indexOf(worst) + 1, bestScore: best.score, worstScore: worst.score,
+          gains: diffs.filter((x) => x.delta > 0).sort((a, b) => b.delta - a.delta).slice(0, 3),
+          drops: diffs.filter((x) => x.delta < 0).sort((a, b) => a.delta - b.delta).slice(0, 3),
+          inspectionDiff: (best.inspect ? 1 : 0) - (worst.inspect ? 1 : 0), tokenDiff,
+        };
+      }
+    }
+
+    // 4. things that got worse after being scored earlier (reliability problems), and things that improved
+    facts.regressions = []; facts.improvements = [];
+    if (sheetRuns.length >= 2) {
+      facts.missions.forEach((m) => {
+        const v = m.pts.filter((x) => x !== null);
+        if (v.length < 2) return;
+        const earlierBest = Math.max(...v.slice(0, -1)), last = v[v.length - 1];
+        if (earlierBest > 0 && last < earlierBest) facts.regressions.push({ name: m.name, from: earlierBest, to: last });
+        if (last > v[0]) facts.improvements.push({ name: m.name, from: v[0], to: last });
+      });
+    }
+
+    // 5. where the team sits
+    facts.gap = { behindNext: null, aheadOfNext: null };
+    if (row && row.best !== null) {
+      const scored = board.filter((r) => r.best !== null);
+      const above = scored.filter((r) => r.best > row.best), below = scored.filter((r) => r.best < row.best);
+      if (above.length) facts.gap.behindNext = Math.min(...above.map((r) => r.best)) - row.best;
+      if (below.length) facts.gap.aheadOfNext = row.best - Math.max(...below.map((r) => r.best));
+      facts.gap.vsFieldAverageBest = row.best - facts.field.averageBest;
+    }
+
+    // 6. exact points from the easy fixes, per match
+    const tokenGain = sheetRuns.length ? Math.max(...sheetRuns.map((r) => 50 - SHEET.tokens.points[r.tokens])) : 0;
+    const inspGain = facts.inspectionMissed ? SHEET.inspection.points : 0;
+    facts.quickWinPotential = { inspection: inspGain, tokens: tokenGain, total: inspGain + tokenGain };
   }
 
   // Short fingerprint of the facts, so a saved AI report can say "scores changed since this was written".
@@ -185,6 +247,12 @@
       biggestOpportunities: f.leftOnTable.slice(0, 4).map((m) => `${m.name}: ${m.lost} points left`),
       quickWins: f.quickWins, commonMissesComparedWithField: f.commonMisses.map((m) => `${m.name} (${m.fieldPercent}% of other runs score it)`),
       standouts: f.standouts.map((m) => m.name),
+      // worked out by the program (the AI should explain these, not recalculate them)
+      prioritiesInOrder: f.priorities.slice(0, 3),
+      strengths: f.strengths,
+      whyBestMatchWasBest: f.bestVsWorst,
+      gotWorseAfterEarlierMatch: f.regressions, improvedFirstToLast: f.improvements,
+      standing: f.gap, easyPointsPerMatch: f.quickWinPotential,
     };
   }
 

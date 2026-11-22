@@ -146,7 +146,7 @@
   }
 
   // ---------- view counter (free service, no sign-up) ----------
-  // Counts a "view" once per browser session and a "visitor" once per browser.
+  // Counts a "view" every time the page is opened or reloaded and a "visitor" once per browser.
   // Nothing is counted when you test on your own computer (localhost).
   const isLocal = ["localhost", "127.0.0.1", "0.0.0.0", ""].includes(location.hostname);
 
@@ -161,17 +161,16 @@
   async function trackViews(countIt) {
     const result = { views: null, visitors: null };
     try {
-      const doView = countIt && !isLocal && !store.get("fll_counted", true);
+      const doView = countIt && !isLocal;   // every page open or reload counts as a view
       const doVisitor = countIt && !isLocal && !store.get("fll_visitor");
       const [v, u] = await Promise.all([
         counterCall(doView ? "hit" : "get", "views"),
         counterCall(doVisitor ? "hit" : "get", "visitors"),
       ]);
-      if (doView) store.set("fll_counted", "1", true);
       if (doVisitor) store.set("fll_visitor", "1");
       result.views = v;
       result.visitors = u;
-    } catch (e) { /* counter is a nice-to-have; never break the page */ }
+    } catch (e) { result.blocked = true; /* counter is a nice-to-have; never break the page */ }
     return result;
   }
 

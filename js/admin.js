@@ -302,7 +302,7 @@
     return `
       <div class="card"><h2>Website views</h2>
         <div class="stats"><div class="stat"><b id="st-views">…</b>views</div><div class="stat"><b id="st-visitors">…</b>visitors</div></div>
-        <p class="muted small" style="margin-bottom:0">A “view” is counted once each time someone opens the public page in a new browser session; a “visitor” is counted once per browser. Opening this admin page doesn't count.</p></div>
+        <p class="muted small" id="st-note" style="margin:8px 0 0"></p><p class="muted small" style="margin-bottom:0">A “view” is counted each time someone opens or reloads the public page; a “visitor” is counted once per browser. Opening this admin page or the scorer page doesn't count.</p></div>
 
       <div class="card stack"><h2>Page text</h2>
         <label class="field"><span>Tournament name</span><input type="text" data-f="title" value="${esc(d.title)}"></label>
@@ -338,6 +338,8 @@
     if ($("st-views")) {
       $("st-views").textContent = c.views === null ? "n/a" : c.views.toLocaleString();
       $("st-visitors").textContent = c.visitors === null ? "n/a" : c.visitors.toLocaleString();
+      const note = $("st-note");
+      if (note) note.innerHTML = c.views === null ? "<b>The counter couldn't be reached.</b> An ad blocker or privacy extension in this browser may be blocking it. Try a private window, or turn the blocker off for this site." : "";
     }
   }
 

@@ -11,6 +11,10 @@ Two pages, one GitHub Pages site:
 
 `img/logo.png` is the emblem shown in the site header. The other files in `img/` (`logo-transparent.png`, `fll-challenge-reverse.png`, `cert-bg.jpg`) are the artwork used by the participation certificates in Google Slides.
 
+## QR code
+
+`img/qr.svg` is the QR code shown in the header of the public page (desktop and tablet widths). It points to the public site address.
+
 ## One-time setup (≈5 minutes)
 
 1. **Turn on GitHub Pages**: repo → *Settings → Pages → Build and deployment → Source: **GitHub Actions***.

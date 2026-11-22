@@ -9,7 +9,7 @@ Two pages, one GitHub Pages site:
 
 ## Logo
 
-Put the Mechanical Mages logo at `img/logo.png` (a square or wide PNG, about 300 px tall is plenty). It appears in the header of both pages automatically; until the file exists the header is text only.
+`img/logo.png` is the emblem shown in the site header (transparent background). `img/logo-black.png` is the full logo with the team name on black, used for the certificates.
 
 ## One-time setup (≈5 minutes)
 

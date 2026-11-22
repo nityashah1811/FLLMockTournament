@@ -17,6 +17,7 @@
   const S = {
     token: store.get(TOKEN_KEY) || "",
     data: null,
+    base: null,   // the version we last loaded/published (used to merge with other people's changes)
     sha: "",
     dirty: false,
     tab: "scores",
@@ -48,31 +49,6 @@
     return { data: FLL.normalize(JSON.parse(b64dec(body.content))), sha: body.sha };
   }
 
-  async function ghSave(overwrite) {
-    if (overwrite) S.sha = (await ghLoad()).sha; // pick up the newest version id, then replace it
-    const stamp = new Date().toISOString();
-    S.data.updatedAt = stamp;
-    const res = await fetch(API, {
-      method: "PUT",
-      headers: Object.assign({ "Content-Type": "application/json" }, headers()),
-      body: JSON.stringify({
-        message: "Update tournament data " + stamp,
-        content: b64enc(JSON.stringify(S.data, null, 2) + "\n"),
-        sha: S.sha,
-        branch: CFG.branch,
-      }),
-    });
-    const body = await res.json().catch(() => ({}));
-    if (res.status === 409 || (res.status === 422 && /sha/i.test(body.message || ""))) {
-      const err = new Error("conflict");
-      err.conflict = true;
-      throw err;
-    }
-    if (!res.ok) throw new Error(apiError(res, body));
-    S.sha = body.content.sha;
-    return stamp;
-  }
-
   // ---------- state helpers ----------
   function touch() {
     S.dirty = true;
@@ -100,18 +76,15 @@
     btn.textContent = "Publishing…";
     toast("");
     try {
-      let stamp;
-      try {
-        stamp = await ghSave(false);
-      } catch (e) {
-        if (!e.conflict) throw e;
-        if (!confirm("The schedule was changed somewhere else since you opened this page (maybe on another device).\n\nReplace it with what is on this screen?")) throw new Error("Not published — reload the page to see the newest version.");
-        stamp = await ghSave(true);
-      }
+      // Save on top of the newest version, keeping scores the scorers entered in the meantime.
+      const r = await FLLGH.pushMerged(S.base, S.data, "Update tournament data");
+      const stamp = r.stamp;
+      S.data = r.data; S.base = FLLGH.clone(r.data); S.sha = r.sha;
       S.dirty = false;
       clearDraft();
       updateBar();
       watchLive(stamp);
+      renderPanel();
       toast("Saved. The public page updates in about a minute.", "ok");
     } catch (e) {
       toast("Could not save: " + esc(e.message), "error");
@@ -294,6 +267,14 @@
         <label class="field"><span>Announcement banner (leave empty for none)</span><textarea rows="3" data-f="announcement" placeholder="e.g. Lunch is at 12:30 in the cafeteria!">${esc(d.announcement)}</textarea></label>
       </div>
 
+      <div class="card stack"><h2>Scorers</h2>
+        <p class="muted small" style="margin:0">Scorers pick a match and enter scores on their own phones at <b>${esc(FLL.ROOT)}score/</b>. Each scorer opens the <b>scorer link</b> once to connect their device.</p>
+        <button class="btn" data-act="copyscorer">Copy scorer link</button>
+        <a class="btn secondary" href="../score/" target="_blank" rel="noopener" style="text-align:center;text-decoration:none">Open the scorer page</a>
+        <div class="notice warn small" style="margin:0"><b>Keep the link private.</b> It contains a key that can edit the tournament data. Share it only with your scorers (text or message, not social media). For safety, make the key on GitHub with a short expiry (for example 3 days) and delete it after the event.</div>
+        <div id="scorer-msg"></div>
+      </div>
+
       <div class="card stack"><h2>Tools</h2>
         <button class="btn secondary" data-act="backup">Download a backup (JSON)</button>
         <button class="btn danger" data-act="clearscores">Clear all scores</button>
@@ -320,6 +301,7 @@
     if (!m) return;
     const n = val === "" ? null : Math.max(0, Math.round(Number(val)));
     m[k].score = n === null || isNaN(n) ? null : n;
+    m[k].detail = null; // a score typed here replaces any scoresheet details
     touch();
     // refresh the card's coloring/pill without redrawing (keeps keyboard focus)
     const card = document.querySelector(`[data-card="${mid}"]`);
@@ -406,6 +388,13 @@
         a.click();
         break;
       }
+      case "copyscorer": {
+        const url = FLL.ROOT + "score/#key=" + encodeURIComponent(FLLGH.getToken());
+        const done = () => { const el = $("scorer-msg"); if (el) el.innerHTML = '<div class="notice ok">Copied. Send it to your scorers.</div>'; };
+        if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(url).then(done, () => prompt("Copy this scorer link:", url));
+        else prompt("Copy this scorer link:", url);
+        break;
+      }
       case "disconnect":
         if (confirm("Disconnect this browser from GitHub? Unpublished changes on this screen will be lost.")) {
           store.del(TOKEN_KEY); clearDraft(); S.token = ""; S.dirty = false; S.data = null; renderConnect();
@@ -424,6 +413,7 @@
     try {
       const r = await ghLoad();
       S.data = r.data;
+      S.base = FLLGH.clone(r.data);
       S.sha = r.sha;
       store.set(TOKEN_KEY, S.token);
     } catch (e) {
@@ -447,6 +437,22 @@
     }
     renderApp();
   }
+
+  // Every 30 seconds, bring in scores the scorers have saved (never while you are typing).
+  async function pull() {
+    if (!S.data || !S.token || document.hidden) return;
+    const ae = document.activeElement;
+    if (ae && ["INPUT", "TEXTAREA", "SELECT"].includes(ae.tagName)) return;
+    try {
+      const { data: remote, sha } = await ghLoad();
+      if (JSON.stringify(remote) === JSON.stringify(S.base)) return;
+      S.data = FLLGH.merge3(S.base, S.data, remote);
+      S.base = FLLGH.clone(remote); S.sha = sha;
+      if (S.dirty) store.set(DRAFT_KEY, JSON.stringify({ data: S.data }));
+      renderPanel();
+    } catch (e) { /* try again next time */ }
+  }
+  setInterval(pull, 30000);
 
   start(false);
 })();

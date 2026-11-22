@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <meta name="theme-color" content="#0b1730">
+  <title>Scorer | FLL Mock Tournament</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap brand">
+      <img id="logo" src="../img/logo.png" alt="" hidden onload="this.hidden=false" onerror="this.remove()">
+      <div>
+        <p class="eyebrow"><span>Mechanical Mages</span><span class="dot"> &middot; </span><span>FTC Team 20288</span></p>
+        <h1>Scorer</h1>
+        <p class="sub" id="sub">FLL Mock Tournament scoresheet</p>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap" id="app"><p class="empty">Loading&hellip;</p></main>
+
+  <div id="bar" class="sc-bar" hidden>
+    <div class="wrap">
+      <div class="sc-bar-total"><small id="bar-label">Score</small><b id="bar-total">0</b></div>
+      <button class="btn big" id="bar-save">Save score</button>
+    </div>
+  </div>
+
+  <script src="../config.js"></script>
+  <script src="../js/common.js"></script>
+  <script src="../js/github.js"></script>
+  <script src="../js/missions.js"></script>
+  <script src="../js/scorer.js"></script>
+</body>
+</html>

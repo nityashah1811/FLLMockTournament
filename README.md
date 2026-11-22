@@ -33,6 +33,21 @@ Two pages, one GitHub Pages site:
 
 Published changes show up on the viewer page in about a minute (the admin page tells you when it's live). Viewer pages refresh themselves every 30 seconds.
 
+## Scoring (the scorer page)
+
+Scorers use `https://nityashah1811.github.io/FLLMockTournament/score/` on their phones:
+
+1. Organizer: **Admin → Settings → Scorers → Copy scorer link**, and send it to each scorer. Opening the link once connects that phone.
+2. Scorer: choose **Both tables / Table 1 / Table 2**, tap **Score** next to a team, tick off the missions (the total updates live), then **Save score**.
+3. **Manual score override**: turn it on and type the final score by hand (a referee decision, a correction). The mission total is then ignored.
+4. Saved scores appear for other scorers within about 20 seconds and on the public leaderboard about a minute later.
+
+Several scorers can save at the same time; every save re-reads the newest data and only changes that one score. The admin page merges its changes the same way, so it never wipes out scorer entries.
+
+**Mission points** are in `js/missions.js` (Bioglow 2026-27, copied from the unofficial Komurobo scoresheet; they add up to the 530-point maximum). Have your head referee compare them with FIRST's official Robot Game Rulebook, and fix any number in that file.
+
+**Keep the scorer link private.** It contains a GitHub key that can edit this repository. Make the key with a short expiry (e.g. 3 days) and delete it on GitHub after the event.
+
 ## How it works
 
 - All data lives in `data.json`. The admin page saves it to GitHub with the token; GitHub Actions publishes it.

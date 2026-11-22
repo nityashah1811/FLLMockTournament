@@ -419,7 +419,7 @@
       }
       case "clearscores":
         if (confirm("Erase EVERY score? (Teams and the schedule stay.)")) {
-          d.matches.forEach((m) => { m.t1.score = null; m.t2.score = null; }); d.currentMatch = ""; touch(); renderPanel();
+          d.matches.forEach((m) => ["t1", "t2"].forEach((k) => { m[k].score = null; m[k].detail = null; m[k].scoredAt = null; })); d.currentMatch = ""; touch(); renderPanel();
         }
         break;
       case "backup": {

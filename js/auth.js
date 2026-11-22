@@ -58,23 +58,26 @@
   }
 
   // ---------- one-time setup (organizer) ----------
-  function showSetup(el, onReady, notice) {
+  function showSetup(el, onReady, notice, prefill) {
     const legacy = GH.legacyToken();
     el.innerHTML = card(`
       <h2>One-time setup (organizer)</h2>
       <p>Choose the password that scorers and organizers will type (for example <b>20288</b>).${legacy ? " This device already has a working key, so you don't need to make a new one." : ""}</p>
       ${note(notice)}
       <form id="setupform" class="stack">
-        <label class="field"><span>Password to use</span><input type="text" id="newpw" autocomplete="off" autocapitalize="off" placeholder="e.g. 20288"></label>
+        <label class="field"><span>Password to use</span><input type="text" id="newpw" autocomplete="off" autocapitalize="off" placeholder="e.g. 20288" value="${esc(prefill || "")}"></label>
         ${legacy ? "" : `
         <details open class="small"><summary><b>Make the key (about 2 minutes)</b></summary>
           <ol class="steps">
             <li>Open <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">github.com/settings/personal-access-tokens/new</a> and sign in as <b>${esc(CFG.owner)}</b>.</li>
-            <li>Name: <code>FLL</code>. Expiration: a date just after your tournament.</li>
-            <li>Repository access → <b>Only select repositories</b> → choose <b>${esc(CFG.repo)}</b>.</li>
-            <li>Permissions → <b>Add permissions</b> → tick <b>Contents</b>, then set it to <b>Read and write</b>.</li>
+            <li>Token name: <code>FLL</code>. Expiration: a date just after your tournament.</li>
+            <li><b>Repository access</b>: choose <b>Only select repositories</b>, then pick <b>${esc(CFG.repo)}</b>. (The default, “Public repositories”, is read-only and will not work.)</li>
+            <li>Scroll to <b>Permissions</b> and click <b>Add permissions</b>. Tick <b>Contents</b>. It appears in the list with “Access: Read-only”: change that to <b>Read and write</b>.</li>
             <li>Click <b>Generate token</b>, copy it, and paste it below.</li>
           </ol>
+          <details class="small muted"><summary>Still stuck? Use a classic key instead</summary>
+            <p>Open <a href="https://github.com/settings/tokens/new?scopes=public_repo&description=FLL" target="_blank" rel="noopener">this link</a> (the <b>public_repo</b> box is pre-ticked), set an expiration, press <b>Generate token</b> and paste it below. It works, but it is less restricted than the steps above (it can change any of your public repositories), so delete it on GitHub right after the tournament.</p>
+          </details>
         </details>
         <label class="field"><span>The key you just made</span><input type="password" id="newkey" autocomplete="off" autocapitalize="off" placeholder="github_pat_…"></label>`}
         <button class="btn big" id="savesetup" type="submit">Save</button>
@@ -91,11 +94,15 @@
         await GH.load(key);                         // can this key read the repository?
         await GH.saveVault(key, await seal(pw, key)); // can it write? (this also stores the locked key)
       } catch (err) {
-        const m = /isn't allowed|isn't valid/.test(err.message)
-          ? (legacy ? "The key saved on this device can't save changes, so it can't be used. Open this page in a private window and set up again with a new key."
-                    : "That key can read the repository but isn't allowed to save. Make a new key and in step 4 set Contents to “Read and write” (and choose only the " + CFG.repo + " repository). GitHub said: " + err.message.replace(/^.*?GitHub says:\s*/, ""))
+        const denied = /isn't allowed|isn't valid/.test(err.message);
+        if (legacy && denied) {   // the old key saved on this device cannot write: drop it and ask for a new one
+          GH.clearLegacy();
+          return showSetup(el, onReady, "The key that was saved on this device can't save changes, so it can't be used. Make a new key with the steps below (about 2 minutes).", pw);
+        }
+        const m = denied
+          ? "That key can read the repository but isn't allowed to save. Make a new key and in step 4 set Contents to “Read and write” (and choose only the " + CFG.repo + " repository). GitHub said: " + err.message.replace(/^.*?GitHub says:\s*/, "")
           : err.message;
-        return showSetup(el, onReady, m);
+        return showSetup(el, onReady, m, pw);
       }
       GH.clearLegacy();
       GH.setToken(key);

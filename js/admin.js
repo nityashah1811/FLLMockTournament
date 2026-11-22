@@ -32,10 +32,13 @@
   const headers = () => ({ Authorization: "Bearer " + S.token, Accept: "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28" });
 
   function apiError(res, body) {
-    if (res.status === 401) return "GitHub says the token isn't valid (it may have expired). Reconnect on the Settings tab.";
+    const why = body && body.message ? ` (GitHub says: “${body.message}”)` : "";
+    if (res.status === 401) return "GitHub says the token isn't valid or has expired. Make a new one and reconnect on the Settings tab." + why;
     if (res.status === 403 || res.status === 404)
-      return `GitHub can't find or write ${CFG.dataFile} in ${CFG.owner}/${CFG.repo} (branch “${CFG.branch}”). Check that the token has access to this repository with “Contents: Read and write”, and that the site files have been merged into the “${CFG.branch}” branch.`;
-    return "GitHub error " + res.status + (body && body.message ? ": " + body.message : "");
+      return `GitHub wouldn't let this token save ${CFG.dataFile} in ${CFG.owner}/${CFG.repo} (branch “${CFG.branch}”)${why}. ` +
+        `Fix: make a new token whose Repository access includes ${CFG.repo} and whose Repository permissions say Contents → Read and write. ` +
+        `Also make sure the token was created while signed in as ${CFG.owner}.`;
+    return "GitHub error " + res.status + why;
   }
 
   async function ghLoad() {

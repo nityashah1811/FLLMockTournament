@@ -152,9 +152,12 @@
 
   async function counterCall(op, key) {
     const url = CFG.counterHost + "/" + op + "/" + encodeURIComponent(CFG.counterNamespace) + "/" + key;
-    const res = await fetch(url, { cache: "no-store" });
-    const j = await res.json();
-    return typeof j.value === "number" ? j.value : 0; // "Key not found" => nobody has visited yet
+    const ctl = new AbortController(), timer = setTimeout(() => ctl.abort(), 6000);   // a blocked network can hang forever: give up after 6 s
+    try {
+      const res = await fetch(url, { cache: "no-store", signal: ctl.signal });
+      const j = await res.json();
+      return typeof j.value === "number" ? j.value : 0; // "Key not found" => nobody has visited yet
+    } finally { clearTimeout(timer); }
   }
 
   // countIt=false => only read the numbers (used by the admin page).

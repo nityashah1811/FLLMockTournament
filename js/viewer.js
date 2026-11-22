@@ -150,5 +150,6 @@
   refresh();
   FLL.trackViews(true).then((c) => {
     if (c.views !== null) { $("views").textContent = c.views.toLocaleString(); $("visitors").textContent = c.visitors.toLocaleString(); }
+    else { const l = $("views").closest("div"); if (l) l.hidden = true; }   // counter blocked on this network: hide the line instead of showing dashes
   });
 })();
